@@ -4,18 +4,21 @@ public class Context {
 	long pContext;
 	
 	public Context(Mainloop m) {
-		pContext = Context.JNICreate(m.getPointer());
+		JNICreate(m.getPointer());
 	}
 	
 	public void connect(String servername) {
-		Context.JNIConnect(pContext, servername);
+		JNIConnect(servername);
 	}
 	
 	public long getPointer() {
 		return pContext;
 	}
 	
-	private final static native long JNICreate(long ptr_mainloop);
-	private final static native long JNIConnect(
-			long ptr_context, String server);
+	public void callback() {
+		System.out.println("ho!");
+	}
+	
+	private final native void JNICreate(long ptr_mainloop);
+	private final native int JNIConnect(String server);
 }

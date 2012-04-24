@@ -9,47 +9,89 @@
 
 #include <pulse/pulseaudio.h>
 
+typedef struct jni_cb_info {
+	JNIEnv *jenv;
+	jobject jobject;
+	void *data;
+} jni_cb_info ;
+
+static void context_state_cb(pa_context* c, void* userdata) {
+	dlog(0, "%d", pa_context_get_state(c));
+	jni_cb_info *data = (jni_cb_info*)userdata;
+	JNIEnv *jenv = data->jenv;
+	jobject jobj = data->jobject;
+//	jclass cls = (*jenv)->GetObjectClass(jenv, jobj);
+}
+
 static void sink_info_cb(pa_context* c, const pa_sink_info *i,
 		int eol, void *userdata) {
 	dlog(0, "Sup bro", NULL);
 	dlog(0, i->description);
     pa_threaded_mainloop *ma;
 
-    ma = userdata;
-    assert(ma);
+    //ma = userdata->data;
+    //assert(ma);
 
-    pa_threaded_mainloop_signal(ma, 0);
+    //pa_threaded_mainloop_signal(ma, 0);
 }
 
-JNIEXPORT jlong JNICALL Java_com_harrcharr_reverb_pulse_Mainloop_JNINew(
+JNIEXPORT jlong JNICALL
+Java_com_harrcharr_reverb_pulse_Mainloop_JNINew(
 		JNIEnv *jenv, jclass jcls) {
 	pa_threaded_mainloop *m = pa_threaded_mainloop_new();
 
 	return m;
 }
 
-JNIEXPORT void JNICALL Java_com_harrcharr_reverb_pulse_Mainloop_JNIStart(
+JNIEXPORT void JNICALL
+Java_com_harrcharr_reverb_pulse_Mainloop_JNIStart(
 		JNIEnv *jenv, jclass jcls, jlong ptr_m) {
 	pa_threaded_mainloop_start((pa_threaded_mainloop*)ptr_m);
 }
 
-JNIEXPORT jlong JNICALL Java_com_harrcharr_reverb_pulse_Context_JNICreate(
-		JNIEnv *jenv, jclass jcls, pa_threaded_mainloop *m) {
+pa_context* context_ptr_from_jobject(JNIEnv *env, jobject obj) {
+	  jclass cls = (*env)->GetObjectClass(env, obj);
+	  jfieldID fid;
+	  jlong ptr;
+	  fid = (*env)->GetFieldID(env, cls, "pContext", "J");
+	  if (fid == 0) {
+	    return;
+	  }
+	  ptr = (*env)->GetLongField(env, obj, fid);
+	  return (pa_context*)ptr;
+}
+
+void context_ptr_to_jobject(JNIEnv *env, jobject obj, pa_context *c) {
+	  jclass cls = (*env)->GetObjectClass(env, obj);
+	  jfieldID fid;
+	  fid = (*env)->GetFieldID(env, cls, "pContext", "J");
+	  if (fid == 0) {
+	    return;
+	  }
+	  (*env)->SetLongField(env, obj, fid, (long)c);
+}
+
+JNIEXPORT void JNICALL
+Java_com_harrcharr_reverb_pulse_Context_JNICreate(
+		JNIEnv *jenv, jobject jobj, pa_threaded_mainloop *m) {
 	dlog(0, "%d", m);
 	pa_mainloop_api *api = pa_threaded_mainloop_get_api(m);
 	pa_context *c = pa_context_new(api, "primary");
 
-	dlog(0, "hello from c!");
+	jni_cb_info userdata = {jenv, jobj, NULL};
+	pa_context_set_state_callback(c, context_state_cb, &userdata);
 
+	dlog(0, "hello from c!");
 	dlog(0, "%d", c);
 
-	return c;
+	context_ptr_to_jobject(jenv, jobj, c);
 }
 
-JNIEXPORT jint JNICALL Java_com_harrcharr_reverb_pulse_Context_JNIConnect(
-		JNIEnv *jenv, jclass jcls, jlong ptr_context, jstring server) {
+JNIEXPORT jint JNICALL
+Java_com_harrcharr_reverb_pulse_Context_JNIConnect(
+		JNIEnv *jenv, jobject jobj,jstring server) {
 //	pa_threaded_mainloop *m = (pa_threaded_mainloop*)ptr_mainloop;
-	pa_context *c = (pa_context*)ptr_context;
+	pa_context *c = context_ptr_from_jobject(jenv, jobj);
 
 	dlog(0, "%d", c);
 
@@ -70,7 +112,11 @@ JNIEXPORT jint JNICALL Java_com_harrcharr_reverb_pulse_Context_JNIConnect(
 	dlog(0, pa_context_get_server(c));
 
 	while(pa_context_is_pending(c) != 0) {
-		dlog(0, "%i", pa_context_get_state(c));
+//		dlog(0, "%i", pa_context_get_state(c));
+	}
+
+	while(pa_context_get_state(c) != PA_CONTEXT_READY) {
+//		dlog(0, "%i", pa_context_get_state(c));
 	}
 
 	dlog(0, "holy shit");
