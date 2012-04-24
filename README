@@ -1,0 +1,3 @@
+Reverb aims to be a fully functional remote control
+for remote Pulseaudio servers (hint: think pavucontrol, 
+on your phone!) using libpulse itself.
