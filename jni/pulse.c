@@ -133,6 +133,20 @@ void sink_info_cb(pa_context* c, const pa_sink_info *i,
 
 }
 
+inline void setFieldStringHelper(JNIEnv *jenv,
+		jobject jobj, jclass cls,
+		char *fname, char *data) {
+	jfieldID fid = (*jenv)->GetFieldID(jenv, cls, fname, "Ljava/lang/String;");
+	if (fid == NULL) {
+		return; // Field not found
+	}
+	jstring jstr = (*jenv)->NewStringUTF(jenv, data);
+	if (jstr == NULL) {
+		return; // OOM
+	}
+	(*jenv)->SetObjectField(jenv, jobj, fid, jstr);
+}
+
 JNIEXPORT void JNICALL
 Java_com_harrcharr_reverb_pulse_SinkInfo_JNIPopulateStruct(
 		JNIEnv *jenv, jobject jobj, jlong i_ptr) {
@@ -143,31 +157,8 @@ Java_com_harrcharr_reverb_pulse_SinkInfo_JNIPopulateStruct(
 	dlog(0, i->description);
 	dlog(0, "I'm getting a little closer");
 	jclass cls = (*jenv)->GetObjectClass(jenv, jobj);
-	fid = (*jenv)->GetFieldID(jenv,
-			cls, "sName", "Ljava/lang/String;");
-	if (fid == NULL) {
-		return; /* failed to find the field */
-	}
-
-	/* Create a new string and overwrite the instance field */
-	jstr = (*jenv)->NewStringUTF(jenv, i->name);
-	if (jstr == NULL) {
-		return; /* out of memory */
-	}
-	(*jenv)->SetObjectField(jenv, jobj, fid, jstr);
-
-	fid = (*jenv)->GetFieldID(jenv,
-			cls, "sDescription", "Ljava/lang/String;");
-	if (fid == NULL) {
-		return; /* failed to find the field */
-	}
-
-	/* Create a new string and overwrite the instance field */
-	jstr = (*jenv)->NewStringUTF(jenv, i->description);
-	if (jstr == NULL) {
-		return; /* out of memory */
-	}
-	(*jenv)->SetObjectField(jenv, jobj, fid, jstr);
+	setFieldStringHelper(jenv, jobj, cls, "sName", i->name);
+	setFieldStringHelper(jenv, jobj, cls, "sDescription", i->description);
 }
 
 JNIEXPORT jlong JNICALL

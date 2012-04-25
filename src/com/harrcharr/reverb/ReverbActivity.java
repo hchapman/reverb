@@ -2,9 +2,14 @@ package com.harrcharr.reverb;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 
 import com.harrcharr.reverb.pulse.Context;
 import com.harrcharr.reverb.pulse.Mainloop;
+import com.harrcharr.reverb.pulse.SinkInfo;
 
 public class ReverbActivity extends Activity {
 	static {
@@ -14,20 +19,43 @@ public class ReverbActivity extends Activity {
 		System.loadLibrary("pulse");
 		System.loadLibrary("pulse_interface");
 	}
+	protected Mainloop m;
+	protected Context c;
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
     	setContentView(R.layout.main);
     	System.out.println("poop");
+    	final Context.SinkInfoCallback sinkInfoCb = new Context.SinkInfoCallback() {
+			@Override
+			public void run(final SinkInfo info) {
+				// TODO Auto-generated method stub
+				runOnUiThread(new Runnable() {
+					public void run() {
+						TextView desc = (TextView)findViewById(R.id.sinkDesc);
+						desc.setText(info.getDescription());
+					}
+				});
+			}
+		};
+		m = new Mainloop();
+		c = new Context(m);
     	new Thread(new Runnable() {
-			public void run() {
-				Mainloop m = new Mainloop();
-				Context c = new Context(m);
-				 
+			public void run() {				 
 				c.connect("192.168.0.9");
-				c.getSinkInfo(1);
+				c.getSinkInfo(1, sinkInfoCb);
 			}
     	}).start();
+    	
+        final Button button = (Button) findViewById(R.id.loadSink);
+        final EditText sinkIdx = (EditText) findViewById(R.id.sinkIndex);
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                // Perform action on click
+            	c.getSinkInfo(Integer.parseInt(sinkIdx.getText().toString()), 
+            			sinkInfoCb);
+            }
+        });
     }
 }

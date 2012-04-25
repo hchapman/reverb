@@ -9,4 +9,32 @@
         android:layout_height="wrap_content"
         android:text="@string/hello" />
 
+    <ToggleButton
+        android:id="@+id/muteSink"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Mute" />
+
+    <TextView
+        android:id="@+id/sinkDesc"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Sink Description" />
+
+    <EditText
+        android:id="@+id/sinkIndex"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="number" >
+
+        <requestFocus />
+    </EditText>
+
+    <Button
+        android:id="@+id/loadSink"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Change Sink" />
+
 </LinearLayout>

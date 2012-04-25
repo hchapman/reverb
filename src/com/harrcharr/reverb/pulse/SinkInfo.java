@@ -11,6 +11,9 @@ public class SinkInfo extends JNIStruct {
 	protected void populate() {
 		JNIPopulateStruct(getPointer());
 	}
+	public String getDescription() {
+		return sDescription;
+	}
 	
 	public String toString() {
 		return sName + "\n" + sDescription;

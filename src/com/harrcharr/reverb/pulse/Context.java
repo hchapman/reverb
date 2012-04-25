@@ -1,7 +1,8 @@
 package com.harrcharr.reverb.pulse;
 
 public class Context extends JNIObject {
-	private Runnable cbStatusChanged;
+	protected Runnable cbStatusChanged;
+	protected SinkInfoCallback cbGotSinkInfo;
 	protected Mainloop mainloop;
 	
 	public Context(Mainloop m) {
@@ -14,11 +15,18 @@ public class Context extends JNIObject {
 		System.out.println("JNIConnect done.");
 	}
 	
+	public void setGotSinkInfoCb(SinkInfoCallback cb) {
+		cbGotSinkInfo = cb;
+	}
+	public void getSinkInfo(int idx, SinkInfoCallback cb) {
+		setGotSinkInfoCb(cb);
+		getSinkInfo(idx);
+	}
 	public void getSinkInfo(int idx) {
 		JNIGetSinkInfoByIndex(getPointer(), mainloop.getPointer(), idx);		
 	}
 	
-	public void statusChanged(int nStatus) {
+	protected void statusChanged(int nStatus) {
 		if (cbStatusChanged != null) {
 			cbStatusChanged.run();
 		}
@@ -30,15 +38,20 @@ public class Context extends JNIObject {
 		}
 	}
 	
+	protected void gotSinkInfo(SinkInfo si) {
+		if (cbGotSinkInfo != null) {
+			cbGotSinkInfo.run(si);
+		}
+	}
+	
 	public static void statusChanged(long pContext, int nStatus) {
 		((Context)JNIObject.getByPointer(pContext))
 			.statusChanged(nStatus);
 	}
 	
 	public static void gotSinkInfo(long pContext, long pSinkInfo) {
-		System.out.println(pSinkInfo);
-		SinkInfo si = new SinkInfo(pSinkInfo);
-		System.out.println(si);
+		((Context)JNIObject.getByPointer(pContext))
+			.gotSinkInfo(new SinkInfo(pSinkInfo));
 	}
 	
 	private static final native long JNICreate(long pMainloop);
@@ -46,4 +59,8 @@ public class Context extends JNIObject {
 			long pContext, String server);
 	private static final native void JNIGetSinkInfoByIndex(
 			long pContext, long pMainloop, int idx);
+	
+	public static interface SinkInfoCallback {
+		void run(SinkInfo info);
+	}
 }
