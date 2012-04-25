@@ -9,7 +9,11 @@
 
 #include <pulse/pulseaudio.h>
 
-JavaVM *g_vm;
+static JavaVM *g_vm;
+static jclass jclsContext;
+
+const char *kContextPath =
+		"com/harrcharr/reverb/pulse/Context";
 
 static void context_state_cb(pa_context* c, void* userdata) {
 	JNIEnv *env;
@@ -17,7 +21,7 @@ static void context_state_cb(pa_context* c, void* userdata) {
 	char isAttached = 0;
 
 	status = (*g_vm)->GetEnv(g_vm, (void **) &env, JNI_VERSION_1_4);
-	dlog(0, "sttus %d", status);
+	dlog(0, "status %d", status);
 	if(status < 0){
 		dlog(0, "ATTACHIN'");
 		status = (*g_vm)->AttachCurrentThread(g_vm, &env, NULL);
@@ -27,9 +31,13 @@ static void context_state_cb(pa_context* c, void* userdata) {
 		isAttached = 1;
 	}
 
-	jclass cls = (*env)->FindClass(env, "com/harrcharr/reverb/pulse/Context");
+	jclass cls = jclsContext;
 	dlog(0, "What's happening? %d", cls);
 	if (cls == 0) {
+		if(isAttached == 1) {
+			dlog(0, "detaching");
+			(*g_vm)->DetachCurrentThread(g_vm);
+		}
 		return;
 	}
 	jmethodID mid = (*env)->GetStaticMethodID(env, cls,
@@ -215,9 +223,22 @@ void dlog(int level, const char *fmt, ...) {
 	va_end(args);
 }
 
+void initClassHelper(JNIEnv *env,
+		const char *path, jclass *clsptr) {
+	jclass cls = (*env)->FindClass(env, path);
+	(*clsptr) = (*env)->NewGlobalRef(env, cls);
+}
+
 JNIEXPORT jint JNICALL JNI_OnLoad(
                 JavaVM *jvm, void *reserved) {
 	(void)reserved;
+	JNIEnv *env;
+
 	g_vm = jvm;
+	if ((*jvm)->GetEnv(jvm, (void**) &env, JNI_VERSION_1_6) != JNI_OK) {
+		return -1;
+	}
+	initClassHelper(env, kContextPath, &jclsContext);
+
     return JNI_VERSION_1_6;
 }

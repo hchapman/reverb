@@ -8,6 +8,7 @@ public class JNIObject {
 	
 	protected JNIObject(long ptr) {
 		lPointer = ptr;
+		addToTable();
 	}
 	
 	public static JNIObject getByPointer(long ptr) {

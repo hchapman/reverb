@@ -9,8 +9,14 @@ public class Context extends JNIObject {
 		JNIConnect(getPointer(), servername);
 	}
 	
+	public void statusChanged(int nStatus) {
+		System.out.println("I'm pointing to "+getPointer());
+		System.out.println("My status has changed to "+nStatus);
+	}
+	
 	public static void contextStatusChanged(long pContext, int nStatus) {
-		System.out.println("ho! Status of " + pContext + " is now "+ nStatus);
+		((Context)JNIObject.getByPointer(pContext))
+			.statusChanged(nStatus);
 	}
 	
 	private static final native long JNICreate(long pMainloop);
