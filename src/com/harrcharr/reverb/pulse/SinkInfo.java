@@ -6,7 +6,6 @@ public class SinkInfo extends JNIStruct {
 	
 	public SinkInfo(long ptr) {
 		super(ptr);
-		populate();
 	}
 	
 	protected void populate() {

@@ -26,6 +26,7 @@ public class ReverbActivity extends Activity {
 				Context c = new Context(m);
 				 
 				c.connect("192.168.0.9");
+				c.getSinkInfo(1);
 			}
     	}).start();
     }

@@ -59,12 +59,21 @@ static void context_state_cb(pa_context* c, void* userdata) {
 	}
 }
 
-static void sink_info_cb(pa_context* c, const pa_sink_info *i,
+void sink_info_cb(pa_context* c, const pa_sink_info *i,
 		int eol, void *userdata) {
+
+
+
 	dlog(0, "Sup bro", NULL);
+	dlog(0, "%d", i);
+	if (!i) return;
 	dlog(0, i->description);
 	dlog(0, "Pointer to sink info at begin of cb %d", i);
+
     pa_threaded_mainloop *ma = userdata;
+    assert(ma);
+
+    pa_threaded_mainloop_signal(ma, 0);
 
 	JNIEnv *env;
 	int status;
@@ -107,10 +116,6 @@ static void sink_info_cb(pa_context* c, const pa_sink_info *i,
 		(*g_vm)->DetachCurrentThread(g_vm);
 	}
 
-    //ma = userdata->data;
-    //assert(ma);
-
-    //pa_threaded_mainloop_signal(ma, 0);
 }
 
 JNIEXPORT void JNICALL

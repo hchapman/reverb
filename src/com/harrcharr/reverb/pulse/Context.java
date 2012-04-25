@@ -12,7 +12,10 @@ public class Context extends JNIObject {
 	public void connect(String servername) {
 		JNIConnect(getPointer(), servername);
 		System.out.println("JNIConnect done.");
-		JNIGetSinkInfoByIndex(getPointer(), mainloop.getPointer(), 0);		
+	}
+	
+	public void getSinkInfo(int idx) {
+		JNIGetSinkInfoByIndex(getPointer(), mainloop.getPointer(), idx);		
 	}
 	
 	public void statusChanged(int nStatus) {
