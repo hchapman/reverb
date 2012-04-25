@@ -32,7 +32,6 @@ static void context_state_cb(pa_context* c, void* userdata) {
 	}
 
 	jclass cls = jclsContext;
-	dlog(0, "What's happening? %d", cls);
 	if (cls == 0) {
 		if(isAttached == 1) {
 			dlog(0, "detaching");
@@ -41,7 +40,7 @@ static void context_state_cb(pa_context* c, void* userdata) {
 		return;
 	}
 	jmethodID mid = (*env)->GetStaticMethodID(env, cls,
-			"contextStatusChanged", "(JI)V");
+			"statusChanged", "(JI)V");
 	if (mid == 0) {
 		if(isAttached == 1) {
 			dlog(0, "detaching");
@@ -49,11 +48,11 @@ static void context_state_cb(pa_context* c, void* userdata) {
 		}
 		return;
 	}
-	dlog(0, "here goes c is %d mid is %d", c, mid);
-//	(*env)->CallStaticVoid
+
+	// Run the actual Java callback method
 	(*env)->CallStaticVoidMethod(env, cls, mid, (jlong)c,
 			(jint)pa_context_get_state(c));
-	dlog(0, "wat %d", pa_context_get_state(c));
+
 	if(isAttached == 1) {
 		dlog(0, "detaching");
 		(*g_vm)->DetachCurrentThread(g_vm);
@@ -64,12 +63,91 @@ static void sink_info_cb(pa_context* c, const pa_sink_info *i,
 		int eol, void *userdata) {
 	dlog(0, "Sup bro", NULL);
 	dlog(0, i->description);
+	dlog(0, "Pointer to sink info at begin of cb %d", i);
     pa_threaded_mainloop *ma = userdata;
+
+	JNIEnv *env;
+	int status;
+	char isAttached = 0;
+
+	status = (*g_vm)->GetEnv(g_vm, (void **) &env, JNI_VERSION_1_4);
+	dlog(0, "status %d", status);
+	if(status < 0){
+		dlog(0, "ATTACHIN'");
+		status = (*g_vm)->AttachCurrentThread(g_vm, &env, NULL);
+		if(status < 0) {
+			return;
+		}
+		isAttached = 1;
+	}
+
+	jclass cls = jclsContext;
+	if (cls == 0) {
+		if(isAttached == 1) {
+			dlog(0, "detaching");
+			(*g_vm)->DetachCurrentThread(g_vm);
+		}
+		return;
+	}
+	jmethodID mid = (*env)->GetStaticMethodID(env, cls,
+			"gotSinkInfo", "(JJ)V");
+	if (mid == 0) {
+		if(isAttached == 1) {
+			dlog(0, "detaching");
+			(*g_vm)->DetachCurrentThread(g_vm);
+		}
+		return;
+	}
+
+	// Run the actual Java callback method
+	(*env)->CallStaticVoidMethod(env, cls, mid, (jlong)c, (jlong)i);
+
+	if(isAttached == 1) {
+		dlog(0, "detaching");
+		(*g_vm)->DetachCurrentThread(g_vm);
+	}
 
     //ma = userdata->data;
     //assert(ma);
 
     //pa_threaded_mainloop_signal(ma, 0);
+}
+
+JNIEXPORT void JNICALL
+Java_com_harrcharr_reverb_pulse_SinkInfo_JNIPopulateStruct(
+		JNIEnv *jenv, jobject jobj, jlong i_ptr) {
+	pa_sink_info *i = (pa_sink_info*)i_ptr;
+	jstring jstr;
+	jfieldID fid;
+	dlog(0, "About to populate structure i ptr %d", i);
+	dlog(0, i->description);
+	dlog(0, "I'm getting a little closer");
+	jclass cls = (*jenv)->GetObjectClass(jenv, jobj);
+	fid = (*jenv)->GetFieldID(jenv,
+			cls, "sName", "Ljava/lang/String;");
+	if (fid == NULL) {
+		return; /* failed to find the field */
+	}
+
+	/* Create a new string and overwrite the instance field */
+	jstr = (*jenv)->NewStringUTF(jenv, i->name);
+	if (jstr == NULL) {
+		return; /* out of memory */
+	}
+	(*jenv)->SetObjectField(jenv, jobj, fid, jstr);
+
+	fid = (*jenv)->GetFieldID(jenv,
+			cls, "sDescription", "Ljava/lang/String;");
+	if (fid == NULL) {
+		return; /* failed to find the field */
+	}
+
+	/* Create a new string and overwrite the instance field */
+	jstr = (*jenv)->NewStringUTF(jenv, i->description);
+	if (jstr == NULL) {
+		return; /* out of memory */
+	}
+	(*jenv)->SetObjectField(jenv, jobj, fid, jstr);
 }
 
 JNIEXPORT jlong JNICALL
@@ -139,6 +217,28 @@ Java_com_harrcharr_reverb_pulse_Context_JNIConnect(
 
 	return result;
 }
+
+JNIEXPORT void JNICALL
+Java_com_harrcharr_reverb_pulse_Context_JNIGetSinkInfoByIndex(
+		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr, jint idx) {
+	pa_context *c = (pa_context *)c_ptr;
+	pa_threaded_mainloop *m = (pa_threaded_mainloop *)m_ptr;
+	pa_threaded_mainloop_lock(m);
+
+	pa_operation *o;
+	dlog(0, "About to get sink info %d", m);
+	o = pa_context_get_sink_info_by_index(c, (int)idx, sink_info_cb, m);
+	assert(o);
+	dlog(0, "Sink info call is a go!");
+	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
+		dlog(0, "Penis!");
+		pa_threaded_mainloop_wait(m);
+	}
+	dlog(0, "Mainloop is done waiting");
+	pa_operation_unref(o);
+	pa_threaded_mainloop_unlock(m);
+}
+
 //	dlog(0, "started", NULL);
 //    pa_threaded_mainloop_lock(m);
 //    dlog(0, "locked", NULL);
@@ -154,13 +254,13 @@ Java_com_harrcharr_reverb_pulse_Context_JNIConnect(
 //    while (pa_operation_get_state(o) == PA_OPERATION_RUNNING)
 //    {
 //    	dlog(0, "waiting", NULL);
-//        pa_threaded_mainloop_wait(m);
+//
 //    }
 //    dlog(0, "op done", NULL);
 //
-//    pa_operation_unref(o);
+//
 //    dlog(0, "unref'd", NULL);
-//    pa_threaded_mainloop_unlock(m);
+//
 //	dlog(0, "meh", NULL);
 //
 //	return result;
