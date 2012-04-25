@@ -62,11 +62,26 @@ static void context_state_cb(pa_context* c, void* userdata) {
 void sink_info_cb(pa_context* c, const pa_sink_info *i,
 		int eol, void *userdata) {
 
+	if (eol < 0) {
+		dlog(0, "Apparently this is an error");
+	    pa_threaded_mainloop *ma = userdata;
+	    assert(ma);
 
+	    pa_threaded_mainloop_signal(ma, 0);
+	    return;
+	}
+
+	if (eol > 0) {
+	    pa_threaded_mainloop *ma = userdata;
+	    assert(ma);
+
+	    pa_threaded_mainloop_signal(ma, 0);
+	    return;
+	}
 
 	dlog(0, "Sup bro", NULL);
-	dlog(0, "%d", i);
-	if (!i) return;
+	dlog(0, "%d eol %d", i, eol);
+
 	dlog(0, i->description);
 	dlog(0, "Pointer to sink info at begin of cb %d", i);
 
