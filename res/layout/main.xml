@@ -13,7 +13,8 @@
         android:id="@+id/muteSink"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Mute" />
+        android:text="Mute"
+        android:onClick="onToggleClicked" />
 
     <TextView
         android:id="@+id/sinkDesc"

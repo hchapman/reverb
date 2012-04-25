@@ -3,11 +3,15 @@ package com.harrcharr.reverb.pulse;
 public class Context extends JNIObject {
 	protected Runnable cbStatusChanged;
 	protected SinkInfoCallback cbGotSinkInfo;
+	protected SuccessCallback cbSuccess;
 	protected Mainloop mainloop;
+	
+	protected int nStatus;
 	
 	public Context(Mainloop m) {
 		super(JNICreate(m.getPointer()));
 		mainloop = m;
+		nStatus = -1;
 	}
 	
 	public void connect(String servername) {
@@ -25,17 +29,20 @@ public class Context extends JNIObject {
 	public void getSinkInfo(int idx) {
 		JNIGetSinkInfoByIndex(getPointer(), mainloop.getPointer(), idx);		
 	}
+	public void setSinkMute(int idx, boolean mute) {
+		JNISetSinkMuteByIndex(getPointer(), mainloop.getPointer(), idx, mute);
+	}
 	
-	protected void statusChanged(int nStatus) {
+	public boolean isReady() {
+		return nStatus == 4;
+	}
+	
+	protected void statusChanged(int status) {
+		nStatus = status;
 		if (cbStatusChanged != null) {
 			cbStatusChanged.run();
 		}
-		System.out.println("I'm pointing to "+getPointer());
-		System.out.println("My status has changed to "+nStatus);
 		
-		if (nStatus >= 4) {
-
-		}
 	}
 	
 	protected void gotSinkInfo(SinkInfo si) {
@@ -44,9 +51,15 @@ public class Context extends JNIObject {
 		}
 	}
 	
-	public static void statusChanged(long pContext, int nStatus) {
+	protected void operationSuccess(int success) {
+		if (cbSuccess != null) {
+			cbSuccess.run(success);
+		}
+	}
+	
+	public static void statusChanged(long pContext, int status) {
 		((Context)JNIObject.getByPointer(pContext))
-			.statusChanged(nStatus);
+			.statusChanged(status);
 	}
 	
 	public static void gotSinkInfo(long pContext, long pSinkInfo) {
@@ -59,8 +72,13 @@ public class Context extends JNIObject {
 			long pContext, String server);
 	private static final native void JNIGetSinkInfoByIndex(
 			long pContext, long pMainloop, int idx);
+	private static final native void JNISetSinkMuteByIndex(
+			long pContext, long pMainloop, int idx, boolean mute);
 	
 	public static interface SinkInfoCallback {
 		void run(SinkInfo info);
+	}
+	public static interface SuccessCallback {
+		void run(int success);
 	}
 }

@@ -250,6 +250,27 @@ Java_com_harrcharr_reverb_pulse_Context_JNIGetSinkInfoByIndex(
 	pa_threaded_mainloop_unlock(m);
 }
 
+JNIEXPORT void JNICALL
+Java_com_harrcharr_reverb_pulse_Context_JNISetSinkMuteByIndex(
+		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr, jint idx, jboolean mute) {
+	pa_context *c = (pa_context *)c_ptr;
+	pa_threaded_mainloop *m = (pa_threaded_mainloop *)m_ptr;
+	pa_threaded_mainloop_lock(m);
+
+	pa_operation *o;
+	dlog(0, "About to get sink mute %d", m);
+	o = pa_context_set_sink_mute_by_index(c, (uint32_t)idx, (int)mute, NULL, m);
+	assert(o);
+	dlog(0, "Sink mute call is a go!");
+	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
+		dlog(0, "Penis!");
+		pa_threaded_mainloop_wait(m);
+	}
+	dlog(0, "Mainloop is done waiting");
+	pa_operation_unref(o);
+	pa_threaded_mainloop_unlock(m);
+}
+
 //	dlog(0, "started", NULL);
 //    pa_threaded_mainloop_lock(m);
 //    dlog(0, "locked", NULL);
