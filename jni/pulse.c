@@ -9,25 +9,54 @@
 
 #include <pulse/pulseaudio.h>
 
-typedef struct jni_cb_info {
-	JNIEnv *jenv;
-	jobject jobject;
-	void *data;
-} jni_cb_info ;
+JavaVM *g_vm;
 
 static void context_state_cb(pa_context* c, void* userdata) {
-	dlog(0, "%d", pa_context_get_state(c));
-	jni_cb_info *data = (jni_cb_info*)userdata;
-	JNIEnv *jenv = data->jenv;
-	jobject jobj = data->jobject;
-//	jclass cls = (*jenv)->GetObjectClass(jenv, jobj);
+	JNIEnv *env;
+	int status;
+	char isAttached = 0;
+
+	status = (*g_vm)->GetEnv(g_vm, (void **) &env, JNI_VERSION_1_4);
+	dlog(0, "sttus %d", status);
+	if(status < 0){
+		dlog(0, "ATTACHIN'");
+		status = (*g_vm)->AttachCurrentThread(g_vm, &env, NULL);
+		if(status < 0) {
+			return;
+		}
+		isAttached = 1;
+	}
+
+	jclass cls = (*env)->FindClass(env, "com/harrcharr/reverb/pulse/Context");
+	dlog(0, "What's happening? %d", cls);
+	if (cls == 0) {
+		return;
+	}
+	jmethodID mid = (*env)->GetStaticMethodID(env, cls,
+			"contextStatusChanged", "(JI)V");
+	if (mid == 0) {
+		if(isAttached == 1) {
+			dlog(0, "detaching");
+			(*g_vm)->DetachCurrentThread(g_vm);
+		}
+		return;
+	}
+	dlog(0, "here goes c is %d mid is %d", c, mid);
+//	(*env)->CallStaticVoid
+	(*env)->CallStaticVoidMethod(env, cls, mid, (jlong)c,
+			(jint)pa_context_get_state(c));
+	dlog(0, "wat %d", pa_context_get_state(c));
+	if(isAttached == 1) {
+		dlog(0, "detaching");
+		(*g_vm)->DetachCurrentThread(g_vm);
+	}
 }
 
 static void sink_info_cb(pa_context* c, const pa_sink_info *i,
 		int eol, void *userdata) {
 	dlog(0, "Sup bro", NULL);
 	dlog(0, i->description);
-    pa_threaded_mainloop *ma;
+    pa_threaded_mainloop *ma = userdata;
 
     //ma = userdata->data;
     //assert(ma);
@@ -49,49 +78,27 @@ Java_com_harrcharr_reverb_pulse_Mainloop_JNIStart(
 	pa_threaded_mainloop_start((pa_threaded_mainloop*)ptr_m);
 }
 
-pa_context* context_ptr_from_jobject(JNIEnv *env, jobject obj) {
-	  jclass cls = (*env)->GetObjectClass(env, obj);
-	  jfieldID fid;
-	  jlong ptr;
-	  fid = (*env)->GetFieldID(env, cls, "pContext", "J");
-	  if (fid == 0) {
-	    return;
-	  }
-	  ptr = (*env)->GetLongField(env, obj, fid);
-	  return (pa_context*)ptr;
-}
-
-void context_ptr_to_jobject(JNIEnv *env, jobject obj, pa_context *c) {
-	  jclass cls = (*env)->GetObjectClass(env, obj);
-	  jfieldID fid;
-	  fid = (*env)->GetFieldID(env, cls, "pContext", "J");
-	  if (fid == 0) {
-	    return;
-	  }
-	  (*env)->SetLongField(env, obj, fid, (long)c);
-}
-
-JNIEXPORT void JNICALL
+JNIEXPORT jlong JNICALL
 Java_com_harrcharr_reverb_pulse_Context_JNICreate(
-		JNIEnv *jenv, jobject jobj, pa_threaded_mainloop *m) {
+		JNIEnv *jenv, jclass jcls, pa_threaded_mainloop *m) {
 	dlog(0, "%d", m);
 	pa_mainloop_api *api = pa_threaded_mainloop_get_api(m);
 	pa_context *c = pa_context_new(api, "primary");
 
-	jni_cb_info userdata = {jenv, jobj, NULL};
-	pa_context_set_state_callback(c, context_state_cb, &userdata);
+	pa_context_set_state_callback(c, context_state_cb, m);
 
 	dlog(0, "hello from c!");
 	dlog(0, "%d", c);
 
-	context_ptr_to_jobject(jenv, jobj, c);
+	return c;
+//	context_ptr_to_jobject(jenv, jobj, c);
 }
 
 JNIEXPORT jint JNICALL
 Java_com_harrcharr_reverb_pulse_Context_JNIConnect(
-		JNIEnv *jenv, jobject jobj,jstring server) {
+		JNIEnv *jenv, jclass jcls, jlong ptr_c, jstring server) {
 //	pa_threaded_mainloop *m = (pa_threaded_mainloop*)ptr_mainloop;
-	pa_context *c = context_ptr_from_jobject(jenv, jobj);
+	pa_context *c = (pa_context *)ptr_c;
 
 	dlog(0, "%d", c);
 
@@ -210,6 +217,7 @@ void dlog(int level, const char *fmt, ...) {
 
 JNIEXPORT jint JNICALL JNI_OnLoad(
                 JavaVM *jvm, void *reserved) {
-        (void)jvm; (void)reserved;
-        return JNI_VERSION_1_6;
+	(void)reserved;
+	g_vm = jvm;
+    return JNI_VERSION_1_6;
 }

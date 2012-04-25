@@ -1,15 +1,9 @@
 package com.harrcharr.reverb.pulse;
 
-public class Mainloop {
-	long pMainloop;
-	
+public class Mainloop extends JNIObject {
 	public Mainloop() {
-		pMainloop = Mainloop.JNINew();
-		Mainloop.JNIStart(pMainloop);
-	}
-	
-	public long getPointer() {
-		return pMainloop;
+		super(Mainloop.JNINew());
+		Mainloop.JNIStart(getPointer());
 	}
 	
 	private final static native long JNINew();	

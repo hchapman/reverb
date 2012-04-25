@@ -1,24 +1,19 @@
 package com.harrcharr.reverb.pulse;
 
-public class Context {
-	long pContext;
-	
+public class Context extends JNIObject {
 	public Context(Mainloop m) {
-		JNICreate(m.getPointer());
+		super(JNICreate(m.getPointer()));
 	}
 	
 	public void connect(String servername) {
-		JNIConnect(servername);
+		JNIConnect(getPointer(), servername);
 	}
 	
-	public long getPointer() {
-		return pContext;
+	public static void contextStatusChanged(long pContext, int nStatus) {
+		System.out.println("ho! Status of " + pContext + " is now "+ nStatus);
 	}
 	
-	public void callback() {
-		System.out.println("ho!");
-	}
-	
-	private final native void JNICreate(long ptr_mainloop);
-	private final native int JNIConnect(String server);
+	private static final native long JNICreate(long pMainloop);
+	private static final native int JNIConnect(
+			long pContext, String server);
 }
