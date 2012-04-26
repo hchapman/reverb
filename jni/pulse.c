@@ -17,7 +17,6 @@ const char *kContextPath =
 
 typedef struct jni_pa_cb_info {
 	jobject cb_runnable;        	// Object with the run() command
-	char *cb_runnable_type;        	// Type of runnable (so we know what to search for
 	pa_threaded_mainloop *m;       	// pa_mainloop for signaling
 } jni_pa_cb_info_t ;
 
@@ -67,38 +66,22 @@ static void context_state_cb(pa_context* c, void* userdata) {
 
 void sink_info_cb(pa_context* c, const pa_sink_info *i,
 		int eol, void *userdata) {
-    pa_threaded_mainloop *m = ((jni_pa_cb_info*)userdata)->m;
+	jni_pa_cb_info_t *cbdata = (jni_pa_cb_info_t*)userdata;
+    pa_threaded_mainloop *m = cbdata->m;
     assert(m);
 
 	if (eol < 0) {
 		dlog(0, "Apparently this is an error");
-
 	    pa_threaded_mainloop_signal(m, 0);
 	    return;
 	}
-
-	if (eol > 0) {
-
-	    pa_threaded_mainloop_signal(m, 0);
-	    return;
-	}
-
-	dlog(0, "Sup bro", NULL);
-	dlog(0, "%d eol %d", i, eol);
-
-	dlog(0, i->description);
-	dlog(0, "Pointer to sink info at begin of cb %d", i);
-
-    pa_threaded_mainloop_signal(m, 0);
 
 	JNIEnv *env;
 	int status;
 	char isAttached = 0;
 
 	status = (*g_vm)->GetEnv(g_vm, (void **) &env, JNI_VERSION_1_6);
-	dlog(0, "status %d", status);
 	if(status < 0){
-		dlog(0, "ATTACHIN'");
 		status = (*g_vm)->AttachCurrentThread(g_vm, &env, NULL);
 		if(status < 0) {
 			return;
@@ -106,7 +89,21 @@ void sink_info_cb(pa_context* c, const pa_sink_info *i,
 		isAttached = 1;
 	}
 
-	jclass cls = jclsContext;
+	if (eol > 0) {
+	    dlog(0, "We're about to free %d", cbdata);
+		pa_threaded_mainloop_signal(m, 0);
+	    (*env)->DeleteGlobalRef(env, cbdata->cb_runnable);
+	    dlog(0, "Even closer to freein' %d", cbdata);
+	    free(cbdata);
+	    cbdata = NULL;
+		if(isAttached == 1) {
+			dlog(0, "detaching");
+			(*g_vm)->DetachCurrentThread(g_vm);
+		}
+	    return;
+	}
+
+	jclass cls = (*env)->GetObjectClass(env, cbdata->cb_runnable);
 	if (cls == 0) {
 		if(isAttached == 1) {
 			dlog(0, "detaching");
@@ -114,8 +111,7 @@ void sink_info_cb(pa_context* c, const pa_sink_info *i,
 		}
 		return;
 	}
-	jmethodID mid = (*env)->GetStaticMethodID(env, cls,
-			"gotSinkInfo", "(JJL/com/harrcharr/reverb/pulse/Context$SinkInfoCallback;)V");
+	jmethodID mid = (*env)->GetMethodID(env, cls, "run", "(J)V");
 	if (mid == 0) {
 		if(isAttached == 1) {
 			dlog(0, "detaching");
@@ -125,12 +121,14 @@ void sink_info_cb(pa_context* c, const pa_sink_info *i,
 	}
 
 	// Run the actual Java callback method
-	(*env)->CallStaticVoidMethod(env, cls, mid, (jlong)c, (jlong)i);
+	(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid, (jlong)i);
 
 	if(isAttached == 1) {
 		dlog(0, "detaching");
 		(*g_vm)->DetachCurrentThread(g_vm);
 	}
+
+	pa_threaded_mainloop_signal(m, 0);
 
 }
 
@@ -232,15 +230,19 @@ Java_com_harrcharr_reverb_pulse_Context_JNIConnect(
 
 JNIEXPORT void JNICALL
 Java_com_harrcharr_reverb_pulse_Context_JNIGetSinkInfoByIndex(
-		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr, jint idx) {
+		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr, jint idx,
+		jobject runnable) {
 	pa_context *c = (pa_context *)c_ptr;
 	pa_threaded_mainloop *m = (pa_threaded_mainloop *)m_ptr;
 	pa_threaded_mainloop_lock(m);
 
 	pa_operation *o;
 	dlog(0, "About to get sink info %d", m);
-	jni_pa_cb_info_t
-	o = pa_context_get_sink_info_by_index(c, (int)idx, sink_info_cb, m);
+
+	jni_pa_cb_info_t *cbinfo = (jni_pa_cb_info_t*)malloc(sizeof(jni_pa_cb_info_t));
+	cbinfo->cb_runnable = (*jenv)->NewGlobalRef(jenv, runnable);
+	cbinfo->m = m;
+	o = pa_context_get_sink_info_by_index(c, (int)idx, sink_info_cb, cbinfo);
 	assert(o);
 	dlog(0, "Sink info call is a go!");
 	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
@@ -339,7 +341,7 @@ JNIEXPORT jint JNICALL Java_com_harrcharr_reverb_pulse_Pulse_JNIDoStuff(
     }
     dlog(0, "op done", NULL);
 
-//    pa_operation_unref(o);
+    pa_operation_unref(o);
     dlog(0, "unref'd", NULL);
     pa_threaded_mainloop_unlock(m);
 	dlog(0, "meh", NULL);

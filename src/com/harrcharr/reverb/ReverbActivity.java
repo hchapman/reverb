@@ -29,9 +29,8 @@ public class ReverbActivity extends Activity {
     	setContentView(R.layout.main);
     	System.out.println("poop");
     	final Context.SinkInfoCallback sinkInfoCb = new Context.SinkInfoCallback() {
-			@Override
-			public void run(final SinkInfo info) {
-				// TODO Auto-generated method stub
+			public void run(long iPtr) {
+				final SinkInfo info = new SinkInfo(iPtr);
 				runOnUiThread(new Runnable() {
 					public void run() {
 						TextView desc = (TextView)findViewById(R.id.sinkDesc);

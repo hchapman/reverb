@@ -11,6 +11,6 @@ LOCAL_MODULE := pulse_interface
 
 LOCAL_LDLIBS := -L$(SYSROOT)/usr/lib -llog
 LOCAL_SHARED_LIBRARIES := libjson libpulse
-LOCAL_SRC_FILES := pulse.c
+LOCAL_SRC_FILES := pulse.c context.c mainloop.c wrap_struct.c
 include $(BUILD_SHARED_LIBRARY)
 

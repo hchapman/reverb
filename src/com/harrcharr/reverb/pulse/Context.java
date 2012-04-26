@@ -23,11 +23,7 @@ public class Context extends JNIObject {
 		cbGotSinkInfo = cb;
 	}
 	public void getSinkInfo(int idx, SinkInfoCallback cb) {
-		setGotSinkInfoCb(cb);
-		getSinkInfo(idx);
-	}
-	public void getSinkInfo(int idx) {
-		JNIGetSinkInfoByIndex(getPointer(), mainloop.getPointer(), idx);		
+		JNIGetSinkInfoByIndex(getPointer(), mainloop.getPointer(), idx, cb);		
 	}
 	public void setSinkMute(int idx, boolean mute) {
 		JNISetSinkMuteByIndex(getPointer(), mainloop.getPointer(), idx, mute);
@@ -47,7 +43,7 @@ public class Context extends JNIObject {
 	
 	protected void gotSinkInfo(SinkInfo si) {
 		if (cbGotSinkInfo != null) {
-			cbGotSinkInfo.run(si);
+//			cbGotSinkInfo.run(si);
 		}
 	}
 	
@@ -63,7 +59,7 @@ public class Context extends JNIObject {
 	}
 	public static void gotSinkInfo(long pContext, long pSinkInfo, SinkInfoCallback cb) {
 		if (cb != null) {
-			cb.run(new SinkInfo(pSinkInfo));
+//			cb.run(new SinkInfo(pSinkInfo));
 		}
 	}
 	
@@ -71,12 +67,12 @@ public class Context extends JNIObject {
 	private static final native int JNIConnect(
 			long pContext, String server);
 	private static final native void JNIGetSinkInfoByIndex(
-			long pContext, long pMainloop, int idx);
+			long pContext, long pMainloop, int idx, SinkInfoCallback cb);
 	private static final native void JNISetSinkMuteByIndex(
 			long pContext, long pMainloop, int idx, boolean mute);
 	
 	public static interface SinkInfoCallback {
-		void run(SinkInfo info);
+		void run(long iPtr);
 	}
 	public static interface SuccessCallback {
 		void run(int success);
