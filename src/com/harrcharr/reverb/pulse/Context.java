@@ -61,10 +61,10 @@ public class Context extends JNIObject {
 		((Context)JNIObject.getByPointer(pContext))
 			.statusChanged(status);
 	}
-	
-	public static void gotSinkInfo(long pContext, long pSinkInfo) {
-		((Context)JNIObject.getByPointer(pContext))
-			.gotSinkInfo(new SinkInfo(pSinkInfo));
+	public static void gotSinkInfo(long pContext, long pSinkInfo, SinkInfoCallback cb) {
+		if (cb != null) {
+			cb.run(new SinkInfo(pSinkInfo));
+		}
 	}
 	
 	private static final native long JNICreate(long pMainloop);

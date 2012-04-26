@@ -15,12 +15,18 @@ static jclass jclsContext;
 const char *kContextPath =
 		"com/harrcharr/reverb/pulse/Context";
 
+typedef struct jni_pa_cb_info {
+	jobject cb_runnable;        	// Object with the run() command
+	char *cb_runnable_type;        	// Type of runnable (so we know what to search for
+	pa_threaded_mainloop *m;       	// pa_mainloop for signaling
+} jni_pa_cb_info_t ;
+
 static void context_state_cb(pa_context* c, void* userdata) {
 	JNIEnv *env;
 	int status;
 	char isAttached = 0;
 
-	status = (*g_vm)->GetEnv(g_vm, (void **) &env, JNI_VERSION_1_4);
+	status = (*g_vm)->GetEnv(g_vm, (void **) &env, JNI_VERSION_1_6);
 	dlog(0, "status %d", status);
 	if(status < 0){
 		dlog(0, "ATTACHIN'");
@@ -61,21 +67,19 @@ static void context_state_cb(pa_context* c, void* userdata) {
 
 void sink_info_cb(pa_context* c, const pa_sink_info *i,
 		int eol, void *userdata) {
+    pa_threaded_mainloop *m = ((jni_pa_cb_info*)userdata)->m;
+    assert(m);
 
 	if (eol < 0) {
 		dlog(0, "Apparently this is an error");
-	    pa_threaded_mainloop *ma = userdata;
-	    assert(ma);
 
-	    pa_threaded_mainloop_signal(ma, 0);
+	    pa_threaded_mainloop_signal(m, 0);
 	    return;
 	}
 
 	if (eol > 0) {
-	    pa_threaded_mainloop *ma = userdata;
-	    assert(ma);
 
-	    pa_threaded_mainloop_signal(ma, 0);
+	    pa_threaded_mainloop_signal(m, 0);
 	    return;
 	}
 
@@ -85,16 +89,13 @@ void sink_info_cb(pa_context* c, const pa_sink_info *i,
 	dlog(0, i->description);
 	dlog(0, "Pointer to sink info at begin of cb %d", i);
 
-    pa_threaded_mainloop *ma = userdata;
-    assert(ma);
-
-    pa_threaded_mainloop_signal(ma, 0);
+    pa_threaded_mainloop_signal(m, 0);
 
 	JNIEnv *env;
 	int status;
 	char isAttached = 0;
 
-	status = (*g_vm)->GetEnv(g_vm, (void **) &env, JNI_VERSION_1_4);
+	status = (*g_vm)->GetEnv(g_vm, (void **) &env, JNI_VERSION_1_6);
 	dlog(0, "status %d", status);
 	if(status < 0){
 		dlog(0, "ATTACHIN'");
@@ -114,7 +115,7 @@ void sink_info_cb(pa_context* c, const pa_sink_info *i,
 		return;
 	}
 	jmethodID mid = (*env)->GetStaticMethodID(env, cls,
-			"gotSinkInfo", "(JJ)V");
+			"gotSinkInfo", "(JJL/com/harrcharr/reverb/pulse/Context$SinkInfoCallback;)V");
 	if (mid == 0) {
 		if(isAttached == 1) {
 			dlog(0, "detaching");
@@ -238,11 +239,12 @@ Java_com_harrcharr_reverb_pulse_Context_JNIGetSinkInfoByIndex(
 
 	pa_operation *o;
 	dlog(0, "About to get sink info %d", m);
+	jni_pa_cb_info_t
 	o = pa_context_get_sink_info_by_index(c, (int)idx, sink_info_cb, m);
 	assert(o);
 	dlog(0, "Sink info call is a go!");
 	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-		dlog(0, "Penis!");
+		dlog(0, "Waiting for the mainloop in sink info!");
 		pa_threaded_mainloop_wait(m);
 	}
 	dlog(0, "Mainloop is done waiting");
@@ -262,10 +264,9 @@ Java_com_harrcharr_reverb_pulse_Context_JNISetSinkMuteByIndex(
 	o = pa_context_set_sink_mute_by_index(c, (uint32_t)idx, (int)mute, NULL, m);
 	assert(o);
 	dlog(0, "Sink mute call is a go!");
-	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-		dlog(0, "Penis!");
-		pa_threaded_mainloop_wait(m);
-	}
+//	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
+//		pa_threaded_mainloop_wait(m);
+//	}
 	dlog(0, "Mainloop is done waiting");
 	pa_operation_unref(o);
 	pa_threaded_mainloop_unlock(m);
