@@ -9,8 +9,10 @@ import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import com.harrcharr.reverb.pulse.Context;
+import com.harrcharr.reverb.pulse.InfoCallback;
 import com.harrcharr.reverb.pulse.Mainloop;
 import com.harrcharr.reverb.pulse.SinkInfo;
+import com.harrcharr.reverb.pulse.SinkInputInfo;
 
 public class ReverbActivity extends Activity {
 	static {
@@ -28,13 +30,24 @@ public class ReverbActivity extends Activity {
     	super.onCreate(savedInstanceState);
     	setContentView(R.layout.main);
     	System.out.println("poop");
-    	final Context.SinkInfoCallback sinkInfoCb = new Context.SinkInfoCallback() {
+    	final InfoCallback<SinkInfo> sinkInfoCb = new InfoCallback<SinkInfo>() {
 			public void run(long iPtr) {
 				final SinkInfo info = new SinkInfo(iPtr);
 				runOnUiThread(new Runnable() {
 					public void run() {
 						TextView desc = (TextView)findViewById(R.id.sinkDesc);
 						desc.setText(info.getDescription());
+					}
+				});
+			}
+		};
+    	final Context.SinkInputInfoCallback sinkInputInfoCb = new Context.SinkInputInfoCallback() {
+			public void run(long iPtr) {
+				final SinkInputInfo info = new SinkInputInfo(iPtr);
+				runOnUiThread(new Runnable() {
+					public void run() {
+						TextView desc = (TextView)findViewById(R.id.clientName);
+						desc.setText(info.getName());
 					}
 				});
 			}
@@ -57,6 +70,8 @@ public class ReverbActivity extends Activity {
 			public void run() {				 
 				c.connect("192.168.0.9");
 				c.getSinkInfo(1, sinkInfoCb);
+//				c.getClientInfo(0, null);
+				c.getSinkInputInfo(0, sinkInputInfoCb);
 			}
     	}).start();
     	

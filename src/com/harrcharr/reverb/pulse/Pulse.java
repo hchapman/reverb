@@ -38,10 +38,10 @@ public class Pulse {
 //	}
 //	
 //	// JNI methods to librtmp
-
-
-	private final static native int JNIDoStuff();
-	private final static native int JNIFreeLoop();
+//
+//
+//	private final static native int JNIDoStuff();
+//	private final static native int JNIFreeLoop();
 //	private final static native void JNIInit(long ptrRTMP);
 //	private final static native int JNISetupURL(long ptrRTMP, String url);
 //	private final static native int JNIConnect(long ptrRTMP, long ptrPacket);
