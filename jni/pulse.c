@@ -1,7 +1,5 @@
 #include <jni.h>
-#include <stdlib.h>
 #include <string.h>
-#include <android/log.h>
 #include <unistd.h>
 
 #include <sys/socket.h>
@@ -9,59 +7,30 @@
 
 #include <pulse/pulseaudio.h>
 
-static JavaVM *g_vm;
-static jclass jclsContext;
+#include "jni_core.h"
+#include "pulse.h"
+#include "logging.h"
 
-const char *kContextPath =
-		"com/harrcharr/reverb/pulse/Context";
-
-typedef struct jni_pa_cb_info {
-	jobject cb_runnable;        	// Object with the run() command
-	pa_threaded_mainloop *m;       	// pa_mainloop for signaling
-} jni_pa_cb_info_t ;
+extern JavaVM *g_vm;
+extern jclass jclsContext;
 
 static void context_state_cb(pa_context* c, void* userdata) {
 	JNIEnv *env;
-	int status;
-	char isAttached = 0;
+	jmethodID mid;
+	jenv_status_t status;
 
-	status = (*g_vm)->GetEnv(g_vm, (void **) &env, JNI_VERSION_1_6);
-	dlog(0, "status %d", status);
-	if(status < 0){
-		dlog(0, "ATTACHIN'");
-		status = (*g_vm)->AttachCurrentThread(g_vm, &env, NULL);
-		if(status < 0) {
-			return;
-		}
-		isAttached = 1;
-	}
-
-	jclass cls = jclsContext;
-	if (cls == 0) {
-		if(isAttached == 1) {
-			dlog(0, "detaching");
-			(*g_vm)->DetachCurrentThread(g_vm);
-		}
-		return;
-	}
-	jmethodID mid = (*env)->GetStaticMethodID(env, cls,
-			"statusChanged", "(JI)V");
-	if (mid == 0) {
-		if(isAttached == 1) {
-			dlog(0, "detaching");
-			(*g_vm)->DetachCurrentThread(g_vm);
-		}
+	if ((status = get_jnienv(&env)) == JENV_UNSUCCESSFUL) {
 		return;
 	}
 
-	// Run the actual Java callback method
-	(*env)->CallStaticVoidMethod(env, cls, mid, (jlong)c,
-			(jint)pa_context_get_state(c));
-
-	if(isAttached == 1) {
-		dlog(0, "detaching");
-		(*g_vm)->DetachCurrentThread(g_vm);
+	if (mid = (*env)->GetStaticMethodID(env, jclsContext,
+			"statusChanged", "(JI)V")) {
+		// Run the actual Java callback method
+		(*env)->CallStaticVoidMethod(env, jclsContext, mid, (jlong)c,
+				(jint)pa_context_get_state(c));
 	}
+
+	detach_jnienv(status);
 }
 
 void sink_info_cb(pa_context* c, const pa_sink_info *i,
@@ -350,30 +319,6 @@ JNIEXPORT jint JNICALL Java_com_harrcharr_reverb_pulse_Pulse_JNIDoStuff(
 	return (jint)result;
 }
 
-void dlog(int level, const char *fmt, ...) {
-	va_list args;
 
-	va_start(args, fmt);
-	__android_log_vprint(ANDROID_LOG_DEBUG, "Reverb", fmt, args);
-	va_end(args);
-}
 
-void initClassHelper(JNIEnv *env,
-		const char *path, jclass *clsptr) {
-	jclass cls = (*env)->FindClass(env, path);
-	(*clsptr) = (*env)->NewGlobalRef(env, cls);
-}
 
-JNIEXPORT jint JNICALL JNI_OnLoad(
-                JavaVM *jvm, void *reserved) {
-	(void)reserved;
-	JNIEnv *env;
-
-	g_vm = jvm;
-	if ((*jvm)->GetEnv(jvm, (void**) &env, JNI_VERSION_1_6) != JNI_OK) {
-		return -1;
-	}
-	initClassHelper(env, kContextPath, &jclsContext);
-
-    return JNI_VERSION_1_6;
-}
