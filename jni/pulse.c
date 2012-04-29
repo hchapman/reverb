@@ -13,11 +13,12 @@
 
 extern JavaVM *g_vm;
 
-inline void setFieldStringHelper(JNIEnv *jenv,
+inline void set_field_string(JNIEnv *jenv,
 		jobject jobj, jclass cls,
 		char *fname, char *data) {
 	jfieldID fid = (*jenv)->GetFieldID(jenv, cls, fname, "Ljava/lang/String;");
 	if (fid == NULL) {
+		LOGE("Unable to find field %s", fname);
 		return; // Field not found
 	}
 	jstring jstr = (*jenv)->NewStringUTF(jenv, data);
@@ -25,6 +26,18 @@ inline void setFieldStringHelper(JNIEnv *jenv,
 		return; // OOM
 	}
 	(*jenv)->SetObjectField(jenv, jobj, fid, jstr);
+}
+
+inline void set_field_int(JNIEnv *jenv,
+		jobject jobj, jclass cls,
+		char *fname, int data) {
+	jfieldID fid = (*jenv)->GetFieldID(jenv, cls, fname, "I");
+	if (fid == NULL) {
+		LOGE("Unable to find field %s", fname);
+		return; // Field not found
+	}
+
+	(*jenv)->SetIntField(jenv, jobj, fid, data);
 }
 
 JNIEXPORT void JNICALL
@@ -37,12 +50,12 @@ Java_com_harrcharr_reverb_pulse_SinkInfo_JNIPopulateStruct(
 	dlog(0, i->description);
 	dlog(0, "I'm getting a little closer");
 	jclass cls = (*jenv)->GetObjectClass(jenv, jobj);
-	setFieldStringHelper(jenv, jobj, cls, "sName", i->name);
-	setFieldStringHelper(jenv, jobj, cls, "sDescription", i->description);
+	set_field_string(jenv, jobj, cls, "sName", i->name);
+	set_field_string(jenv, jobj, cls, "sDescription", i->description);
 }
 
 JNIEXPORT void JNICALL
-Java_com_harrcharr_reverb_pulse_SinkInputInfo_JNIPopulateStruct(
+Java_com_harrcharr_reverb_pulse_SinkInput_JNIPopulateStruct(
 		JNIEnv *jenv, jobject jobj, jlong i_ptr) {
 	pa_sink_input_info *i = (pa_sink_input_info*)i_ptr;
 	jstring jstr;
@@ -52,7 +65,8 @@ Java_com_harrcharr_reverb_pulse_SinkInputInfo_JNIPopulateStruct(
 	LOGI("Name of sink input, %s", i->name);
 
 	jclass cls = (*jenv)->GetObjectClass(jenv, jobj);
-	setFieldStringHelper(jenv, jobj, cls, "sName", i->name);
+	set_field_string(jenv, jobj, cls, "mName", i->name);
+	set_field_int(jenv, jobj, cls, "mIndex", i->index);
 }
 
 JNIEXPORT void JNICALL
@@ -65,7 +79,7 @@ Java_com_harrcharr_reverb_pulse_ClientInfo_JNIPopulateStruct(
 	LOGI("Name of client, %s", i->name);
 
 	jclass cls = (*jenv)->GetObjectClass(jenv, jobj);
-	setFieldStringHelper(jenv, jobj, cls, "sName", i->name);
+	set_field_string(jenv, jobj, cls, "sName", i->name);
 }
 
 JNIEXPORT jlong JNICALL

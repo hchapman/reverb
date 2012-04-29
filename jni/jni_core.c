@@ -5,7 +5,7 @@ JavaVM *g_vm;
 jclass jclsContext;
 
 const char *kContextPath =
-		"com/harrcharr/reverb/pulse/Context";
+		"com/harrcharr/reverb/pulse/PulseContext";
 
 jenv_status_t get_jnienv(JNIEnv **env) {
 	dlog(0, "about to get jnienv");

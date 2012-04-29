@@ -164,7 +164,7 @@ void client_info_cb(pa_context* c, const pa_sink_info *i,
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_harrcharr_reverb_pulse_Context_JNICreate(
+Java_com_harrcharr_reverb_pulse_PulseContext_JNICreate(
 		JNIEnv *jenv, jclass jcls, pa_threaded_mainloop *m) {
 	dlog(0, "%d", m);
 	pa_mainloop_api *api = pa_threaded_mainloop_get_api(m);
@@ -180,7 +180,7 @@ Java_com_harrcharr_reverb_pulse_Context_JNICreate(
 }
 
 JNIEXPORT jint JNICALL
-Java_com_harrcharr_reverb_pulse_Context_JNIConnect(
+Java_com_harrcharr_reverb_pulse_PulseContext_JNIConnect(
 		JNIEnv *jenv, jclass jcls, jlong ptr_c, jstring server) {
 //	pa_threaded_mainloop *m = (pa_threaded_mainloop*)ptr_mainloop;
 	pa_context *c = (pa_context *)ptr_c;
@@ -218,7 +218,7 @@ Java_com_harrcharr_reverb_pulse_Context_JNIConnect(
 }
 
 JNIEXPORT void JNICALL
-Java_com_harrcharr_reverb_pulse_Context_JNIGetSinkInfoByIndex(
+Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetSinkInfoByIndex(
 		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr, jint idx,
 		jobject runnable) {
 	pa_context *c = (pa_context *)c_ptr;
@@ -244,7 +244,7 @@ Java_com_harrcharr_reverb_pulse_Context_JNIGetSinkInfoByIndex(
 }
 
 JNIEXPORT void JNICALL
-Java_com_harrcharr_reverb_pulse_Context_JNIGetSinkInputInfoList(
+Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetSinkInputInfoList(
 		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr,
 		jobject runnable) {
 	pa_context *c = (pa_context *)c_ptr;
@@ -270,7 +270,7 @@ Java_com_harrcharr_reverb_pulse_Context_JNIGetSinkInputInfoList(
 }
 
 JNIEXPORT void JNICALL
-Java_com_harrcharr_reverb_pulse_Context_JNIGetSinkInputInfo(
+Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetSinkInputInfo(
 		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr, jint idx,
 		jobject runnable) {
 	pa_context *c = (pa_context *)c_ptr;
@@ -295,8 +295,30 @@ Java_com_harrcharr_reverb_pulse_Context_JNIGetSinkInputInfo(
 	pa_threaded_mainloop_unlock(m);
 }
 
+
 JNIEXPORT void JNICALL
-Java_com_harrcharr_reverb_pulse_Context_JNIGetClientInfo(
+Java_com_harrcharr_reverb_pulse_PulseContext_JNISetSinkInputMuteByIndex(
+		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr, jint idx, jboolean mute,
+		jobject runnable) {
+	pa_context *c = (pa_context *)c_ptr;
+	pa_threaded_mainloop *m = (pa_threaded_mainloop *)m_ptr;
+	pa_threaded_mainloop_lock(m);
+
+	pa_operation *o;
+	dlog(0, "About to get sink mute %d", m);
+	o = pa_context_set_sink_input_mute(c, (uint32_t)idx, (int)mute, NULL, m);
+	assert(o);
+	dlog(0, "Sink mute call is a go!");
+//	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
+//		pa_threaded_mainloop_wait(m);
+//	}
+	dlog(0, "Mainloop is done waiting");
+	pa_operation_unref(o);
+	pa_threaded_mainloop_unlock(m);
+}
+
+JNIEXPORT void JNICALL
+Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetClientInfo(
 		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr, jint idx,
 		jobject runnable) {
 	pa_context *c = (pa_context *)c_ptr;
@@ -322,7 +344,33 @@ Java_com_harrcharr_reverb_pulse_Context_JNIGetClientInfo(
 }
 
 JNIEXPORT void JNICALL
-Java_com_harrcharr_reverb_pulse_Context_JNISetSinkMuteByIndex(
+Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetClientInfoList(
+		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr,
+		jobject runnable) {
+	pa_context *c = (pa_context *)c_ptr;
+	pa_threaded_mainloop *m = (pa_threaded_mainloop *)m_ptr;
+	pa_threaded_mainloop_lock(m);
+
+	pa_operation *o;
+	dlog(0, "About to get sink info %d", m);
+
+	jni_pa_cb_info_t *cbinfo = (jni_pa_cb_info_t*)malloc(sizeof(jni_pa_cb_info_t));
+	cbinfo->cb_runnable = (*jenv)->NewGlobalRef(jenv, runnable);
+	cbinfo->m = m;
+	o = pa_context_get_client_info_list(c, client_info_cb, cbinfo);
+	assert(o);
+	dlog(0, "Sink info call is a go!");
+//	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
+//		dlog(0, "Waiting for the mainloop in sink info!");
+//		pa_threaded_mainloop_wait(m);
+//	}
+	dlog(0, "Mainloop is done waiting");
+	pa_operation_unref(o);
+	pa_threaded_mainloop_unlock(m);
+}
+
+JNIEXPORT void JNICALL
+Java_com_harrcharr_reverb_pulse_PulseContext_JNISetSinkMuteByIndex(
 		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr, jint idx, jboolean mute) {
 	pa_context *c = (pa_context *)c_ptr;
 	pa_threaded_mainloop *m = (pa_threaded_mainloop *)m_ptr;

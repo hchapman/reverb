@@ -1,53 +1,61 @@
 package com.harrcharr.reverb;
 
+import java.util.ArrayList;
+
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
-import com.harrcharr.reverb.pulse.Context;
+import com.harrcharr.reverb.pulse.PulseContext;
 import com.harrcharr.reverb.pulse.InfoCallback;
 import com.harrcharr.reverb.pulse.Mainloop;
 import com.harrcharr.reverb.pulse.SinkInfo;
-import com.harrcharr.reverb.pulse.SinkInputInfo;
+import com.harrcharr.reverb.pulse.SinkInput;
 
 public class ReverbActivity extends Activity {
-	static {
-		System.loadLibrary("json");
-		System.loadLibrary("sndfile");
-		System.loadLibrary("pulsecommon-UNKNOWN.UNKNOWN");
-		System.loadLibrary("pulse");
-		System.loadLibrary("pulse_interface");
-	}
 	protected Mainloop m;
-	protected Context c;
+	protected PulseContext c;
+	
+	protected ListView mSinkInputView;
+	protected ArrayList<SinkInput> sinkInputs;
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
     	setContentView(R.layout.main);
     	System.out.println("poop");
-    	final InfoCallback<SinkInfo> sinkInfoCb = new InfoCallback<SinkInfo>() {
+    	
+    	sinkInputs = new ArrayList<SinkInput>();
+    	
+    	mSinkInputView = (ListView)findViewById(R.id.sinkInputList);
+    	mSinkInputView.setAdapter(new SinkInputAdapter(getBaseContext(), c,
+    			sinkInputs));
+    	
+    	final InfoCallback sinkInfoCb = new InfoCallback() {
 			public void run(long iPtr) {
 				final SinkInfo info = new SinkInfo(iPtr);
 				runOnUiThread(new Runnable() {
 					public void run() {
 						TextView desc = (TextView)findViewById(R.id.sinkDesc);
 						desc.setText(info.getDescription());
+
 					}
 				});
 			}
 		};
-    	final Context.SinkInputInfoCallback sinkInputInfoCb = new Context.SinkInputInfoCallback() {
+    	final InfoCallback sinkInputInfoCb = new InfoCallback() {
 			public void run(long iPtr) {
-				final SinkInputInfo info = new SinkInputInfo(iPtr);
+				final SinkInput info = new SinkInput(c, iPtr);
 				runOnUiThread(new Runnable() {
 					public void run() {
 						TextView desc = (TextView)findViewById(R.id.clientName);
 						desc.setText(info.getName());
+						sinkInputs.add(info);
 					}
 				});
 			}
@@ -65,13 +73,13 @@ public class ReverbActivity extends Activity {
 //			}
 //		};
 		m = new Mainloop();
-		c = new Context(m);
+		c = new PulseContext(m);
     	new Thread(new Runnable() {
 			public void run() {				 
 				c.connect("192.168.0.9");
 				c.getSinkInfo(1, sinkInfoCb);
 //				c.getClientInfo(0, null);
-				c.getSinkInputInfo(0, sinkInputInfoCb);
+				c.getSinkInputInfoList(sinkInputInfoCb);
 			}
     	}).start();
     	
