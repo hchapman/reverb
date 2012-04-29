@@ -23,4 +23,6 @@ typedef enum {
 jenv_status_t get_jnienv(JNIEnv **jenv);
 void detach_jnienv(jenv_status_t status);
 
+void *get_obj_ptr(JNIEnv *env, jobject obj);
+
 #endif

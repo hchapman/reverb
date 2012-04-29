@@ -2,13 +2,23 @@ package com.harrcharr.reverb.pulse;
 
 import java.util.HashMap;
 
-public class JNIObject {	
-	private long lPointer;
+public abstract class JNIObject {	
+	private long mPointer;
 	private static HashMap<Long, JNIObject> ptrTable = new HashMap<Long, JNIObject>();
 	
 	protected JNIObject(long ptr) {
-		lPointer = ptr;
+		mPointer = ptr;
 		addToTable();
+	}
+	protected void finalize() {
+		purge();
+	}
+	
+	/* 
+	 * Delete object being pointed to, remove self from pointer table
+	 */
+	public synchronized void purge() {
+		ptrTable.remove(new Long(mPointer));
 	}
 	
 	public static JNIObject getByPointer(long ptr) {
@@ -18,9 +28,9 @@ public class JNIObject {
 		return ptrTable.get(ptr);
 	}
 	protected void addToTable() {
-		ptrTable.put(new Long(lPointer), this);
+		ptrTable.put(new Long(mPointer), this);
 	}
 	public long getPointer() {
-		return lPointer;
+		return mPointer;
 	}
 }

@@ -5,7 +5,7 @@
 #include "context.h"
 #include "logging.h"
 
-extern jclass jclsContext;
+extern jclass jcls_context;
 
 static void context_state_cb(pa_context* c, void* userdata) {
 	JNIEnv *env;
@@ -16,11 +16,11 @@ static void context_state_cb(pa_context* c, void* userdata) {
 		return;
 	}
 
-	if (jclsContext) {
-		if ((mid = (*env)->GetStaticMethodID(env, jclsContext,
+	if (jcls_context) {
+		if ((mid = (*env)->GetStaticMethodID(env, jcls_context,
 				"statusChanged", "(JI)V"))) {
 			// Run the actual Java callback method
-			(*env)->CallStaticVoidMethod(env, jclsContext, mid, (jlong)c,
+			(*env)->CallStaticVoidMethod(env, jcls_context, mid, (jlong)c,
 					(jint)pa_context_get_state(c));
 		}
 	}

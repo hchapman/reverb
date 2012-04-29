@@ -13,6 +13,8 @@
 
 extern JavaVM *g_vm;
 
+extern jclass jcls_volume;
+
 inline void set_field_string(JNIEnv *jenv,
 		jobject jobj, jclass cls,
 		char *fname, char *data) {
@@ -38,6 +40,25 @@ inline void set_field_int(JNIEnv *jenv,
 	}
 
 	(*jenv)->SetIntField(jenv, jobj, fid, data);
+}
+
+inline void set_field_volume(JNIEnv *jenv,
+		jobject jobj, jclass cls,
+		char *fname, pa_cvolume* v) {
+	jfieldID fid = (*jenv)->GetFieldID(jenv, cls, fname,
+			"Lcom/harrcharr/reverb/pulse/Volume;");
+	if (fid == NULL) {
+		LOGE("Unable to find field %s", fname);
+		return; // Field not found
+	}
+
+	jobject data;
+	jmethodID init = (*jenv)->GetMethodID(jenv, jcls_volume,
+			"<init>", "(J)V");
+	data = (*jenv)->NewObject(jenv, jcls_volume,
+			init, (jlong)v);
+
+	(*jenv)->SetObjectField(jenv, jobj, fid, data);
 }
 
 JNIEXPORT void JNICALL
@@ -67,6 +88,7 @@ Java_com_harrcharr_reverb_pulse_SinkInput_JNIPopulateStruct(
 	jclass cls = (*jenv)->GetObjectClass(jenv, jobj);
 	set_field_string(jenv, jobj, cls, "mName", i->name);
 	set_field_int(jenv, jobj, cls, "mIndex", i->index);
+	set_field_volume(jenv, jobj, cls, "mVolume", &(i->volume));
 }
 
 JNIEXPORT void JNICALL

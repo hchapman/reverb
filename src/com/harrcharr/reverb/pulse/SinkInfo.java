@@ -9,7 +9,7 @@ public class SinkInfo extends JNIStruct {
 	}
 	
 	protected void populate() {
-		JNIPopulateStruct(getPointer());
+		JNIUpdateWithInfo(getPointer());
 	}
 	public String getDescription() {
 		return sDescription;
@@ -19,5 +19,7 @@ public class SinkInfo extends JNIStruct {
 		return sName + "\n" + sDescription;
 	}
 	
-	private final native void JNIPopulateStruct(long pSinkInfo);
+	public native Volume getVolume();
+	
+	private final native void JNIUpdateWithInfo(long pSinkInfo);
 }
