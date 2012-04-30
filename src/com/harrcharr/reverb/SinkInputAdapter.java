@@ -12,6 +12,7 @@ import com.harrcharr.reverb.pulse.InfoCallback;
 import com.harrcharr.reverb.pulse.PulseContext;
 import com.harrcharr.reverb.pulse.SinkInput;
 import com.harrcharr.reverb.pulse.SubscriptionCallback;
+import com.harrcharr.reverb.pulse.Volume;
 
 public class SinkInputAdapter extends StreamNodeAdapter<SinkInput> {
 	public SinkInputAdapter(Activity context, PulseContext pulse) {
@@ -58,12 +59,15 @@ public class SinkInputAdapter extends StreamNodeAdapter<SinkInput> {
             nodeVolume = (SeekBar) convertView.findViewById(R.id.nodeVolume);
             nodeMute = (ToggleButton) convertView.findViewById(R.id.nodeMute);
             
+            nodeVolume.setMax(Volume.NORM);
+            
             convertView.setTag(this);
         }
         
         public void loadNodeIntoViews(SinkInput node) {
         	mNode = node;
         	nodeName.setText(node.getName());
+            nodeVolume.setProgress(mNode.getVolume().get());
         	
         	nodeMute.setOnClickListener(new View.OnClickListener() {
 				@Override

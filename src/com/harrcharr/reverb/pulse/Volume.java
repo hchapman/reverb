@@ -1,20 +1,25 @@
 package com.harrcharr.reverb.pulse;
 
-public class Volume extends JNIObject {
-	private long mPointer;
+import android.util.Log;
+
+public class Volume {
+	public static int NORM = 0x10000;
+	public static int MUTED = 0;
 	
-	public Volume(long ptr) {
-		super(ptr);
+	char mChannels;
+	int[] mVolumes;
+	
+	public Volume(int[] vols) {
+		mVolumes = vols;
+		mChannels = (char)vols.length;
 	}
-	public synchronized void purge() {
-		super.purge();
-		free();
+	
+	public int get() {
+		return mVolumes[0];
 	}
 //	public Volume(char channels, int[] values) {
 //		// init it somehow maybe
 //	}
 	
-	public final native int getMax(); 
-	
-	private synchronized final native void free();
+	public final native int getMax();
 }

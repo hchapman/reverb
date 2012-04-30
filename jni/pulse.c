@@ -52,11 +52,19 @@ inline void set_field_volume(JNIEnv *jenv,
 		return; // Field not found
 	}
 
+	jintArray vols;
+	vols = (*jenv)->NewIntArray(jenv, v->channels);
+	if (vols == NULL) {
+		return; /* oom */
+	}
+	(*jenv)->SetIntArrayRegion(
+			jenv, vols, 0, v->channels, v->values);
+
 	jobject data;
 	jmethodID init = (*jenv)->GetMethodID(jenv, jcls_volume,
-			"<init>", "(J)V");
+			"<init>", "([I)V");
 	data = (*jenv)->NewObject(jenv, jcls_volume,
-			init, (jlong)v);
+			init, vols);
 
 	(*jenv)->SetObjectField(jenv, jobj, fid, data);
 }
@@ -70,6 +78,7 @@ Java_com_harrcharr_reverb_pulse_SinkInfo_JNIPopulateStruct(
 	dlog(0, "About to populate structure i ptr %d", i);
 	dlog(0, i->description);
 	dlog(0, "I'm getting a little closer");
+
 	jclass cls = (*jenv)->GetObjectClass(jenv, jobj);
 	set_field_string(jenv, jobj, cls, "sName", i->name);
 	set_field_string(jenv, jobj, cls, "sDescription", i->description);
@@ -84,6 +93,8 @@ Java_com_harrcharr_reverb_pulse_SinkInput_JNIPopulateStruct(
 
 	LOGI("Sink input index # %d", i->index);
 	LOGI("Name of sink input, %s", i->name);
+
+	LOGD("The volume of %s is %d", i->name, (i->volume).values[0]);
 
 	jclass cls = (*jenv)->GetObjectClass(jenv, jobj);
 	set_field_string(jenv, jobj, cls, "mName", i->name);
