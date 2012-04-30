@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import android.content.Context;
+import android.app.Activity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,33 +16,35 @@ import android.widget.BaseAdapter;
 import com.harrcharr.reverb.pulse.InfoCallback;
 import com.harrcharr.reverb.pulse.PulseContext;
 import com.harrcharr.reverb.pulse.StreamNode;
+import com.harrcharr.reverb.pulse.SubscriptionCallback;
 
 public abstract class StreamNodeAdapter<T extends StreamNode> extends BaseAdapter {
 	private Map<Integer, T> mNodes;
 	private List<Integer> mIndices;
 	
 	protected LayoutInflater mInflater;
-	protected Context mContext;
+	protected Activity mContext;
 	protected PulseContext mPulse;
 	
 	protected InfoCallback<T> mInfoCall;
+	protected SubscriptionCallback mSubscriptionCall;
 	
-	public StreamNodeAdapter(Context context, PulseContext pulse) {
+	public StreamNodeAdapter(Activity context, PulseContext pulse) {
 		mNodes = new HashMap<Integer, T>();
 		mInflater = LayoutInflater.from(context);
 		mContext = context;
 		mPulse = pulse;
-		updateIndices();	
+		update();	
 	}
 	
 	protected void addNode(T node) {
 		mNodes.put(new Integer(node.getIndex()), node);
-		updateIndices();
+		update();
 	}
 	protected void removeNode(int idx) { removeNode(new Integer(idx)); }
 	protected void removeNode(Integer idx) {
 		mNodes.remove(idx);
-		updateIndices();
+		update();
 	}
 	public T getNode(int idx) { return getNode(new Integer(idx)); }
 	public T getNode(Integer idx) {
@@ -54,8 +56,13 @@ public abstract class StreamNodeAdapter<T extends StreamNode> extends BaseAdapte
 		return mNodes.containsKey(idx);
 	}
 	
-	private void updateIndices() {
+	private void update() {
 		mIndices = sortedKeyList(mNodes.keySet());
+		mContext.runOnUiThread(new Runnable() {
+			public void run() {
+				StreamNodeAdapter.this.notifyDataSetChanged();
+			}
+		});
 	}
 	
 	/*
@@ -63,6 +70,9 @@ public abstract class StreamNodeAdapter<T extends StreamNode> extends BaseAdapte
 	 */
 	public InfoCallback<T> getInfoCallback() {
 		return mInfoCall;
+	}
+	public SubscriptionCallback getSubscriptionCallback() {
+		return mSubscriptionCall;
 	}
 	
 	/*

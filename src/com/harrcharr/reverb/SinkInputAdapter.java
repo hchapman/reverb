@@ -1,6 +1,6 @@
 package com.harrcharr.reverb;
 
-import android.content.Context;
+import android.app.Activity;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,12 +11,14 @@ import android.widget.ToggleButton;
 import com.harrcharr.reverb.pulse.InfoCallback;
 import com.harrcharr.reverb.pulse.PulseContext;
 import com.harrcharr.reverb.pulse.SinkInput;
+import com.harrcharr.reverb.pulse.SubscriptionCallback;
 
 public class SinkInputAdapter extends StreamNodeAdapter<SinkInput> {
-	public SinkInputAdapter(Context context, PulseContext pulse) {
+	public SinkInputAdapter(Activity context, PulseContext pulse) {
 		super(context, pulse);
 		
 		mInfoCall = new SinkInputCallback(this);
+		mSubscriptionCall = new SinkInputSubscriptionCallback(this);
 	}
 
 	@Override
@@ -72,7 +74,7 @@ public class SinkInputAdapter extends StreamNodeAdapter<SinkInput> {
         }
     }
 	
-	private class SinkInputCallback implements InfoCallback<SinkInput> {
+	private static class SinkInputCallback implements InfoCallback<SinkInput> {
 		SinkInputAdapter mAdapter; // SinkInputAdapter to update
 		
 		public SinkInputCallback(SinkInputAdapter adapter) {
@@ -87,6 +89,24 @@ public class SinkInputAdapter extends StreamNodeAdapter<SinkInput> {
 			}
 			else {
 				mAdapter.addNode(new SinkInput(mAdapter.getPulseContext(), iPtr));
+			}
+		}
+	}
+	
+	private static class SinkInputSubscriptionCallback implements SubscriptionCallback {
+		SinkInputAdapter mAdapter;
+		
+		public SinkInputSubscriptionCallback(SinkInputAdapter adapter) {
+			mAdapter = adapter;
+		}
+		
+		public void run(int type, int index) {
+			Log.d("Reverb", type + " " + index);
+			if (type == 32) { // Change this lolol actually definitely :/
+				mAdapter.removeNode(index);
+			} else {
+				mAdapter.getPulseContext()
+					.getSinkInputInfo(index, mAdapter.getInfoCallback());
 			}
 		}
 	}

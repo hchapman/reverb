@@ -31,31 +31,19 @@ public class ReverbActivity extends Activity {
     	
     	sinkInputs = new ArrayList<SinkInput>();
 
-//    	final Context.SuccessCallback toggleMuteCb = new Context.SinkInfoCallback() {
-//			@Override
-//			public void run(final SinkInfo info) {
-//				// TODO Auto-generated method stub
-//				runOnUiThread(new Runnable() {
-//					public void run() {
-//						TextView desc = (TextView)findViewById(R.id.sinkDesc);
-//						desc.setText(info.getDescription());
-//					}
-//				});
-//			}
-//		};
 		m = new Mainloop();
 		c = new PulseContext(m);
 		
-    	final SinkInputAdapter siAdapter = new SinkInputAdapter(getBaseContext(), c);
+    	final SinkInputAdapter siAdapter = new SinkInputAdapter(this, c);
     	mSinkInputView = (ListView)findViewById(R.id.sinkInputList);
     	mSinkInputView.setAdapter(siAdapter);
     	
     	new Thread(new Runnable() {
 			public void run() {				 
 				c.connect("192.168.0.9");
-//				c.getSinkInfo(1, sinkInfoCb);
-//				c.getClientInfo(0, null);
+				c.subscribe();
 				c.getSinkInputInfoList(siAdapter.getInfoCallback());
+				c.subscribeSinkInput(siAdapter.getSubscriptionCallback());
 			}
     	}).start();
     }

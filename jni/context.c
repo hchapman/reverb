@@ -7,7 +7,78 @@
 
 extern jclass jcls_context;
 
-static void context_state_cb(pa_context* c, void* userdata) {
+// A structure holding (global) references to runnables, per event type
+typedef struct jni_pa_event_cbs {
+	jobject sink_input_cbo;
+	jobject sink_cbo;
+} jni_pa_event_cbs_t ;
+
+void call_subscription_run(pa_subscription_event_type_t t, uint32_t idx, jobject runnable) {
+	JNIEnv *env;
+	jclass cls;
+	jmethodID mid;
+	int status;
+
+	if ((status = get_jnienv(&env)) == JENV_UNSUCCESSFUL) {
+		return;
+	}
+
+	if ((cls = (*env)->GetObjectClass(env, runnable))) {
+		// For a SubscriptionCallback, our parameters are (int event, int idx)
+		if ((mid = (*env)->GetMethodID(env, cls, "run", "(II)V"))) {
+			// Run the actual Java callback method
+			(*env)->CallVoidMethod(env, runnable, mid, (jint)t, (jint)idx);
+		}
+	}
+
+	detach_jnienv(status);
+}
+
+pa_context_subscribe_cb_t
+context_subscription_cb(pa_context* c, pa_subscription_event_type_t t,
+		uint32_t idx, void *userdata) {
+	jni_pa_event_cbs_t *cbs = (jni_pa_event_cbs_t *)userdata;
+
+    switch (t & PA_SUBSCRIPTION_EVENT_FACILITY_MASK) {
+        case PA_SUBSCRIPTION_EVENT_SINK:
+//            if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE)
+//                w->removeSink(index);
+//            else {
+//                pa_operation *o;
+//                if (!(o = pa_context_get_sink_info_by_index(c, index, sink_cb, w))) {
+//                    show_error(_("pa_context_get_sink_info_by_index() failed"));
+//                    return;
+//                }
+//                pa_operation_unref(o);
+//            }
+            break;
+
+        case PA_SUBSCRIPTION_EVENT_SOURCE:
+        	break;
+
+        case PA_SUBSCRIPTION_EVENT_SINK_INPUT:
+        	LOGD("Remove enum is %d", PA_SUBSCRIPTION_EVENT_REMOVE);
+
+        	if (cbs->sink_input_cbo != NULL)
+        		call_subscription_run(t & PA_SUBSCRIPTION_EVENT_TYPE_MASK,
+        				idx, cbs->sink_input_cbo);
+            break;
+
+        case PA_SUBSCRIPTION_EVENT_SOURCE_OUTPUT:
+            break;
+
+        case PA_SUBSCRIPTION_EVENT_CLIENT:
+            break;
+
+        case PA_SUBSCRIPTION_EVENT_SERVER:
+            break;
+
+        case PA_SUBSCRIPTION_EVENT_CARD:
+            break;
+    }
+}
+
+void context_state_cb(pa_context* c, void* userdata) {
 	JNIEnv *env;
 	jmethodID mid;
 	jenv_status_t status;
@@ -387,4 +458,37 @@ Java_com_harrcharr_reverb_pulse_PulseContext_JNISetSinkMuteByIndex(
 	dlog(0, "Mainloop is done waiting");
 	pa_operation_unref(o);
 	pa_threaded_mainloop_unlock(m);
+}
+
+JNIEXPORT jlong JNICALL
+Java_com_harrcharr_reverb_pulse_PulseContext_JNISubscribe(
+		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr) {
+	pa_context *c = (pa_context *)c_ptr;
+	pa_threaded_mainloop *m = (pa_threaded_mainloop *)m_ptr;
+	pa_threaded_mainloop_lock(m);
+
+	pa_operation *o;
+	o = pa_context_subscribe(c, PA_SUBSCRIPTION_MASK_ALL, NULL, NULL);
+	assert(o);
+
+	pa_operation_unref(o);
+	pa_threaded_mainloop_unlock(m);
+
+	jni_pa_event_cbs_t *cbs = (jni_pa_event_cbs_t *)malloc(sizeof(jni_pa_event_cbs_t));
+	cbs->sink_input_cbo = NULL;
+	pa_context_set_subscribe_callback(c, context_subscription_cb, cbs);
+
+	return (jlong)cbs;
+}
+
+JNIEXPORT void JNICALL
+Java_com_harrcharr_reverb_pulse_PulseContext_JNISubscribeSinkInput(
+		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong cbo_ptr, jobject runnable) {
+	pa_context *c = (pa_context *)c_ptr;
+	jni_pa_event_cbs_t *cbs = (jni_pa_event_cbs_t *)cbo_ptr;
+
+	if (cbs->sink_input_cbo != NULL) {
+		(*jenv)->DeleteGlobalRef(jenv, cbs->sink_input_cbo);
+	}
+	cbs->sink_input_cbo = (*jenv)->NewGlobalRef(jenv, runnable);
 }

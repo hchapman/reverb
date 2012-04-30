@@ -4,6 +4,8 @@ public class PulseContext extends JNIObject {
 	protected Runnable cbStatusChanged;
 	protected Mainloop mainloop;
 	
+	protected long mSubCbPtr;
+	
 	protected int nStatus;
 	
 	public PulseContext(Mainloop m) {
@@ -15,6 +17,13 @@ public class PulseContext extends JNIObject {
 	public void connect(String servername) {
 		JNIConnect(getPointer(), servername);
 		System.out.println("JNIConnect done.");
+	}
+	
+	public void subscribe() {
+		mSubCbPtr = JNISubscribe(getPointer(), mainloop.getPointer());
+	}
+	public void subscribeSinkInput(SubscriptionCallback cb) {
+		JNISubscribeSinkInput(getPointer(), mSubCbPtr, cb);
 	}
 	
 	// Sink Queries
@@ -69,6 +78,9 @@ public class PulseContext extends JNIObject {
 	
 	private static final native long JNICreate(long pMainloop);
 	private static final native int JNIConnect(long pContext, String server);
+	
+	private static final native long JNISubscribe(long pContext, long pMainloop);
+	private static final native void JNISubscribeSinkInput(long pContext, long pCbs, SubscriptionCallback cb);
 	
 	// Sink
 	private static final native void JNIGetSinkInfoByIndex(long pContext, long pMainloop, int idx, InfoCallback cb);
