@@ -18,7 +18,7 @@ public class PulseContext extends JNIObject {
 	}
 	
 	// Sink Queries
-	public void getSinkInfo(int idx, InfoCallback cb) {
+	public void getSinkInfo(int idx, InfoCallback<SinkInfo> cb) {
 		JNIGetSinkInfoByIndex(getPointer(), mainloop.getPointer(), idx, cb);		
 	}
 	// Sink Actions
@@ -27,10 +27,10 @@ public class PulseContext extends JNIObject {
 	}
 	
 	// Sink Input Queries
-	public void getSinkInputInfo(int idx, InfoCallback cb) {
+	public void getSinkInputInfo(int idx, InfoCallback<SinkInput> cb) {
 		JNIGetSinkInputInfo(getPointer(), mainloop.getPointer(), idx, cb);		
 	}
-	public void getSinkInputInfoList(InfoCallback cb) {
+	public void getSinkInputInfoList(InfoCallback<SinkInput> cb) {
 		JNIGetSinkInputInfoList(getPointer(), mainloop.getPointer(), cb);		
 	}
 	// Sink Input Actions
@@ -39,10 +39,10 @@ public class PulseContext extends JNIObject {
 	}
 	
 	// Client Queries
-	public void getClientInfo(int idx, InfoCallback cb) {
+	public void getClientInfo(int idx, InfoCallback<ClientInfo> cb) {
 		JNIGetClientInfo(getPointer(), mainloop.getPointer(), idx, cb);		
 	}
-	public void getClientInfoList(InfoCallback cb) {
+	public void getClientInfoList(InfoCallback<ClientInfo> cb) {
 		JNIGetClientInfoList(getPointer(), mainloop.getPointer(), cb);		
 	}
 	

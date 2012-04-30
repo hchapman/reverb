@@ -1,14 +1,14 @@
 package com.harrcharr.reverb.pulse;
 
-public class ClientInfo extends JNIStruct {
+public class ClientInfo extends PulseNode {
 	String sName;
 	
-	public ClientInfo(long ptr) {
-		super(ptr);
+	public ClientInfo(PulseContext pulse, long ptr) {
+		super(pulse, ptr);
 	}
 	
-	protected void populate() {
-		JNIPopulateStruct(getPointer());
+	public void update(long ptr) {
+		JNIPopulateStruct(ptr);
 	}
 	public String getName() {
 		return sName;
@@ -19,4 +19,9 @@ public class ClientInfo extends JNIStruct {
 	}
 	
 	private final native void JNIPopulateStruct(long pClientInfo);
+
+	@Override
+	public String getDescriptiveName() {
+		return sName;
+	}
 }

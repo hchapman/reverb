@@ -1,11 +1,10 @@
 package com.harrcharr.reverb.pulse;
 
-public abstract class JNIStruct extends JNIObject {
+public abstract class JNIStruct {
 	protected JNIStruct(long ptr) {
-		super(ptr);
 		if (ptr != 0) {
-			populate();
+			update(ptr);
 		}
 	}
-	protected abstract void populate();
+	public abstract void update(long ptr);
 }

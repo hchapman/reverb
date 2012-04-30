@@ -1,20 +1,20 @@
 package com.harrcharr.reverb.pulse;
 
-public class SinkInput extends PulseNode {
-	private int mIndex;
-	private boolean mMuted;
-	private Volume mVolume;
-	private String mName;
-	
+import android.util.Log;
+
+public class SinkInput extends StreamNode {		
 	public SinkInput(PulseContext pulse, long ptr) {
 		super(pulse, ptr);
 	}
 	
-	protected void populate() {
-		JNIPopulateStruct(getPointer());
+	public void update(long ptr) {
+		JNIPopulateStruct(ptr);
 	}
 	
 	public String getName() {
+		return mName;
+	}
+	public String getDescriptiveName() {
 		return mName;
 	}
 	public Volume getVolume() {
@@ -25,6 +25,7 @@ public class SinkInput extends PulseNode {
 	}
 	
 	public void setMute(boolean mute, SuccessCallback cb) {
+		Log.d("Reverb", ""+(mPulse == null));
 		mPulse.setSinkInputMute(mIndex, mute, cb);
 	}
 	

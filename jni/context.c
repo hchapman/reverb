@@ -62,9 +62,9 @@ void sink_info_cb(pa_context* c, const pa_sink_info *i,
 	}
 
 	if ((cls = (*env)->GetObjectClass(env, cbdata->cb_runnable))) {
-		if ((mid = (*env)->GetMethodID(env, cls, "run", "(J)V"))) {
+		if ((mid = (*env)->GetMethodID(env, cls, "run", "(IJ)V"))) {
 			// Run the actual Java callback method
-			(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid, (jlong)i);
+			(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid, (jint)i->index, (jlong)i);
 		}
 	}
 
@@ -107,9 +107,9 @@ void sink_input_info_cb(pa_context* c, const pa_sink_info *i,
 	}
 
 	if ((cls = (*env)->GetObjectClass(env, cbdata->cb_runnable))) {
-		if ((mid = (*env)->GetMethodID(env, cls, "run", "(J)V"))) {
+		if ((mid = (*env)->GetMethodID(env, cls, "run", "(IJ)V"))) {
 			// Run the actual Java callback method
-			(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid, (jlong)i);
+			(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid, (jint)i->index, (jlong)i);
 		}
 	}
 
@@ -152,9 +152,9 @@ void client_info_cb(pa_context* c, const pa_sink_info *i,
 	}
 
 	if ((cls = (*env)->GetObjectClass(env, cbdata->cb_runnable))) {
-		if ((mid = (*env)->GetMethodID(env, cls, "run", "(J)V"))) {
+		if ((mid = (*env)->GetMethodID(env, cls, "run", "(IJ)V"))) {
 			// Run the actual Java callback method
-			(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid, (jlong)i);
+			(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid, (jint)i->index, (jlong)i);
 		}
 	}
 
