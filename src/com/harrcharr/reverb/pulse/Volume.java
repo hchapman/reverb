@@ -14,6 +14,12 @@ public class Volume {
 		mChannels = (char)vols.length;
 	}
 	
+	public int[] getVolumes() {
+		return mVolumes;
+	}
+	public int getNumChannels() {
+		return mVolumes.length;
+	}
 	public int get() {
 		return mVolumes[0];
 	}

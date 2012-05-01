@@ -42,6 +42,18 @@ inline void set_field_int(JNIEnv *jenv,
 	(*jenv)->SetIntField(jenv, jobj, fid, data);
 }
 
+inline void set_field_long(JNIEnv *jenv,
+		jobject jobj, jclass cls,
+		char *fname, long data) {
+	jfieldID fid = (*jenv)->GetFieldID(jenv, cls, fname, "J");
+	if (fid == NULL) {
+		LOGE("Unable to find field %s", fname);
+		return; // Field not found
+	}
+
+	(*jenv)->SetLongField(jenv, jobj, fid, data);
+}
+
 inline void set_field_volume(JNIEnv *jenv,
 		jobject jobj, jclass cls,
 		char *fname, pa_cvolume* v) {
@@ -68,6 +80,20 @@ inline void set_field_volume(JNIEnv *jenv,
 
 	(*jenv)->SetObjectField(jenv, jobj, fid, data);
 }
+
+//void set_field_proplist(JNIEnv *jenv,
+//		jobject jobj, jclass cls,
+//		char *fname, pa_proplist* p) {
+//	jfieldID fid = (*jenv)->GetFieldID(jenv, cls, fname,
+//			"Ljava/nio/ByteBuffer;");
+//	if (fid == NULL) {
+//		LOGE("Unable to find field %s", fname);
+//		return; // Field not found
+//	}
+//
+//	jobject bb = (*jenv)->NewDirectByteBuffer(jenv, p, sizeof(pa_proplist));
+//	(*jenv)->SetObjectField(jenv, jobj, fid, bb);
+//}
 
 JNIEXPORT void JNICALL
 Java_com_harrcharr_reverb_pulse_SinkInfo_JNIPopulateStruct(
@@ -100,6 +126,14 @@ Java_com_harrcharr_reverb_pulse_SinkInput_JNIPopulateStruct(
 	set_field_string(jenv, jobj, cls, "mName", i->name);
 	set_field_int(jenv, jobj, cls, "mIndex", i->index);
 	set_field_volume(jenv, jobj, cls, "mVolume", &(i->volume));
+
+	// Set important proplist values, should they exist.
+	pa_proplist *p = i->proplist;
+	if(pa_proplist_contains(p, PA_PROP_APPLICATION_NAME))
+		set_field_string(jenv, jobj, cls, "mAppName",
+				pa_proplist_gets(p, PA_PROP_APPLICATION_NAME));
+	LOGD(pa_proplist_to_string(i->proplist));
+//	set_field_proplist(jenv, jobj, cls, "mProplist", i->proplist);
 }
 
 JNIEXPORT void JNICALL
@@ -113,6 +147,15 @@ Java_com_harrcharr_reverb_pulse_ClientInfo_JNIPopulateStruct(
 
 	jclass cls = (*jenv)->GetObjectClass(jenv, jobj);
 	set_field_string(jenv, jobj, cls, "sName", i->name);
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_harrcharr_reverb_pulse_PulseNode_getProps(
+		JNIEnv *jenv, jobject jobj, jstring key) {
+	pa_proplist *p = (pa_proplist *)get_long_field(jenv, jobj, "mProplist");
+
+//	LOGD(pa_proplist_gets(p, key));
+	return key;
 }
 
 JNIEXPORT jlong JNICALL

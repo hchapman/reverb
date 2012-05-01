@@ -10,10 +10,13 @@
         android:layout_height="wrap_content"
         android:text="Node name" />
 
-    <SeekBar
+    <com.harrcharr.reverb.VolumeControl
         android:id="@+id/nodeVolume"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" >
+
+    </com.harrcharr.reverb.VolumeControl>
 
     <ToggleButton
         android:id="@+id/nodeMute"

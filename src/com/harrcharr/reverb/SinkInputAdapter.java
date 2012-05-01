@@ -51,23 +51,21 @@ public class SinkInputAdapter extends StreamNodeAdapter<SinkInput> {
 		private SinkInput mNode;
 		
         private TextView nodeName;
-        private SeekBar nodeVolume;
+        private VolumeControl nodeVolume;
         private ToggleButton nodeMute;
         
         public ViewHolder(View convertView) {
             nodeName = (TextView) convertView.findViewById(R.id.nodeName);
-            nodeVolume = (SeekBar) convertView.findViewById(R.id.nodeVolume);
+            nodeVolume = (VolumeControl) convertView.findViewById(R.id.nodeVolume);
             nodeMute = (ToggleButton) convertView.findViewById(R.id.nodeMute);
-            
-            nodeVolume.setMax(Volume.NORM);
             
             convertView.setTag(this);
         }
         
         public void loadNodeIntoViews(SinkInput node) {
         	mNode = node;
-        	nodeName.setText(node.getName());
-            nodeVolume.setProgress(mNode.getVolume().get());
+        	nodeName.setText(node.getDescriptiveName());
+            nodeVolume.setVolume(node.getVolume());
         	
         	nodeMute.setOnClickListener(new View.OnClickListener() {
 				@Override

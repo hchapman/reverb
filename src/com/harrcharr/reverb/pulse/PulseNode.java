@@ -1,6 +1,10 @@
 package com.harrcharr.reverb.pulse;
 
+import java.nio.ByteBuffer;
+
 public abstract class PulseNode extends JNIStruct {
+	public static String PROP_APPLICATION_NAME = "application.name";
+	
 	protected PulseContext mPulse;
 
 	protected int mIndex;
@@ -22,5 +26,4 @@ public abstract class PulseNode extends JNIStruct {
 	 * Returns a human-readable name for this PulseNode.
 	 */
 	public abstract String getDescriptiveName();
-
 }

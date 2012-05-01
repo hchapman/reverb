@@ -3,6 +3,9 @@ package com.harrcharr.reverb.pulse;
 import android.util.Log;
 
 public class SinkInput extends StreamNode {		
+	// More optional parameters
+	protected String mAppName;
+	
 	public SinkInput(PulseContext pulse, long ptr) {
 		super(pulse, ptr);
 	}
@@ -15,7 +18,13 @@ public class SinkInput extends StreamNode {
 		return mName;
 	}
 	public String getDescriptiveName() {
+		if (mAppName != null) 
+			return mAppName + " - " + mName;
 		return mName;
+	}
+	
+	public String getAppName() {
+		return mAppName;
 	}
 	public Volume getVolume() {
 		return mVolume;

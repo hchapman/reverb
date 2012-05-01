@@ -47,13 +47,4 @@ public class ReverbActivity extends Activity {
 			}
     	}).start();
     }
-    
-    public void onToggleClicked(View v) {
-        // Perform action on clicks
-        final EditText sinkIdx = (EditText) findViewById(R.id.sinkIndex);
-//        int nSink = Integer.parseInt(sinkIdx.getText().toString());
-        System.out.println("About to set sink mute, in ReverbActivity");
-        if(c != null && c.isReady())
-         	c.setSinkMute(0, ((ToggleButton)v).isChecked());
-    }
 }

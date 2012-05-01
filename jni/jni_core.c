@@ -40,6 +40,15 @@ void *get_obj_ptr(JNIEnv *env, jobject obj) {
 	return (*env)->GetLongField(env, obj, fid);
 }
 
+long get_long_field(JNIEnv *env, jobject obj, char *fname) {
+	jclass cls = (*env)->GetObjectClass(env, obj);
+	jfieldID fid = (*env)->GetFieldID(env, cls, fname, "J");
+	if (fid == NULL)
+		return;
+
+	return (*env)->GetLongField(env, obj, fid);
+}
+
 char get_char_field(JNIEnv *env, jobject obj, char *field) {
 	jclass cls = (*env)->GetObjectClass(env, obj);
 	jfieldID fid = (*env)->GetFieldID(env, cls, field, "C");

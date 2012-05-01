@@ -17,7 +17,7 @@ void call_subscription_run(pa_subscription_event_type_t t, uint32_t idx, jobject
 	JNIEnv *env;
 	jclass cls;
 	jmethodID mid;
-	int status;
+	jenv_status_t status;
 
 	if ((status = get_jnienv(&env)) == JENV_UNSUCCESSFUL) {
 		return;
@@ -34,8 +34,7 @@ void call_subscription_run(pa_subscription_event_type_t t, uint32_t idx, jobject
 	detach_jnienv(status);
 }
 
-pa_context_subscribe_cb_t
-context_subscription_cb(pa_context* c, pa_subscription_event_type_t t,
+void context_subscription_cb(pa_context* c, pa_subscription_event_type_t t,
 		uint32_t idx, void *userdata) {
 	jni_pa_event_cbs_t *cbs = (jni_pa_event_cbs_t *)userdata;
 
