@@ -233,6 +233,51 @@ void client_info_cb(pa_context* c, const pa_sink_info *i,
 
 }
 
+void success_cb(pa_context* c, int success, void *userdata) {
+	LOGD("freeing");
+	JNIEnv *env;
+	jclass cls;
+	jmethodID mid;
+	jenv_status_t status;
+
+	jni_pa_cb_info_t *cbdata = (jni_pa_cb_info_t*)userdata;
+
+	LOGD("freeing %d", cbdata->to_free);
+	LOGD("freeing %d", cbdata->to_free);
+
+	if(cbdata->to_free != NULL) {
+		LOGD("freeing %d", cbdata->to_free);
+		free(cbdata->to_free);
+		cbdata->to_free = NULL;
+	}
+
+	if (cbdata->cb_runnable == NULL) {
+//		(*env)->DeleteGlobalRef(env, cbdata->cb_runnable);
+		free(cbdata);
+		return;
+	}
+
+	if ((status = get_jnienv(&env)) == JENV_UNSUCCESSFUL) {
+		return;
+	}
+
+    pa_threaded_mainloop *m = cbdata->m;
+    assert(m);
+
+	if ((cls = (*env)->GetObjectClass(env, cbdata->cb_runnable))) {
+		if ((mid = (*env)->GetMethodID(env, cls, "run", "(IJ)V"))) {
+			// Run the actual Java callback method
+			//(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid, (jint)i->index, (jlong)i);
+		}
+	}
+
+	detach_jnienv(status);
+	pa_threaded_mainloop_signal(m, 0);
+
+	(*env)->DeleteGlobalRef(env, cbdata->cb_runnable);
+	free(cbdata);
+}
+
 JNIEXPORT jlong JNICALL
 Java_com_harrcharr_reverb_pulse_PulseContext_JNICreate(
 		JNIEnv *jenv, jclass jcls, pa_threaded_mainloop *m) {
@@ -301,6 +346,7 @@ Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetSinkInfoByIndex(
 	jni_pa_cb_info_t *cbinfo = (jni_pa_cb_info_t*)malloc(sizeof(jni_pa_cb_info_t));
 	cbinfo->cb_runnable = (*jenv)->NewGlobalRef(jenv, runnable);
 	cbinfo->m = m;
+	cbinfo->to_free = NULL;
 	o = pa_context_get_sink_info_by_index(c, (int)idx, sink_info_cb, cbinfo);
 	assert(o);
 	dlog(0, "Sink info call is a go!");
@@ -327,6 +373,7 @@ Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetSinkInputInfoList(
 	jni_pa_cb_info_t *cbinfo = (jni_pa_cb_info_t*)malloc(sizeof(jni_pa_cb_info_t));
 	cbinfo->cb_runnable = (*jenv)->NewGlobalRef(jenv, runnable);
 	cbinfo->m = m;
+	cbinfo->to_free = NULL;
 	o = pa_context_get_sink_input_info_list(c, sink_input_info_cb, cbinfo);
 	assert(o);
 	dlog(0, "Sink info call is a go!");
@@ -353,6 +400,7 @@ Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetSinkInputInfo(
 	jni_pa_cb_info_t *cbinfo = (jni_pa_cb_info_t*)malloc(sizeof(jni_pa_cb_info_t));
 	cbinfo->cb_runnable = (*jenv)->NewGlobalRef(jenv, runnable);
 	cbinfo->m = m;
+	cbinfo->to_free = NULL;
 	o = pa_context_get_sink_input_info(c, (int)idx, sink_input_info_cb, cbinfo);
 	assert(o);
 	dlog(0, "Sink info call is a go!");
@@ -377,6 +425,47 @@ Java_com_harrcharr_reverb_pulse_PulseContext_JNISetSinkInputMuteByIndex(
 	pa_operation *o;
 	dlog(0, "About to get sink mute %d", m);
 	o = pa_context_set_sink_input_mute(c, (uint32_t)idx, (int)mute, NULL, m);
+	assert(o);
+	dlog(0, "Sink mute call is a go!");
+//	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
+//		pa_threaded_mainloop_wait(m);
+//	}
+	dlog(0, "Mainloop is done waiting");
+	pa_operation_unref(o);
+	pa_threaded_mainloop_unlock(m);
+}
+
+JNIEXPORT void JNICALL
+Java_com_harrcharr_reverb_pulse_PulseContext_JNISetSinkInputVolumeByIndex(
+		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr, jint idx, jintArray volumes,
+		jobject runnable) {
+	pa_context *c = (pa_context *)c_ptr;
+	pa_threaded_mainloop *m = (pa_threaded_mainloop *)m_ptr;
+	pa_threaded_mainloop_lock(m);
+	pa_cvolume *v = (pa_cvolume *)malloc(sizeof(pa_cvolume));
+	pa_cvolume_init(v);
+	pa_cvolume_set(v, 2, PA_VOLUME_NORM);
+	char *s = malloc(sizeof(char[500]));
+	LOGD(pa_cvolume_snprint(s, 500, v));
+	LOGD("%d... %d", v->values, v->values[0]);
+	(*jenv)->GetIntArrayRegion(jenv, volumes, 0, (*jenv)->GetArrayLength(jenv, volumes), &(v->values));
+
+	pa_operation *o;
+	dlog(0, "About to set sink volume %d, len %d", v, (*jenv)->GetArrayLength(jenv, volumes));
+	LOGD("Volume is %d", pa_cvolume_valid(v));
+	LOGD(pa_cvolume_snprint(s, 500, v));
+	LOGD("%d... %d", v->values, v->values[0]);
+
+	jni_pa_cb_info_t *cbinfo = (jni_pa_cb_info_t*)malloc(sizeof(jni_pa_cb_info_t));
+	if (runnable != NULL) {
+		cbinfo->cb_runnable = (*jenv)->NewGlobalRef(jenv, runnable);
+	} else {
+		cbinfo->cb_runnable = NULL;
+	}
+	cbinfo->m = m;
+	cbinfo->to_free = v;
+	dlog(0, "Sink volume info is prepared! Want to free %d", cbinfo->to_free);
+	o = pa_context_set_sink_input_volume(c, (uint32_t)idx, v, success_cb, cbinfo);
 	assert(o);
 	dlog(0, "Sink mute call is a go!");
 //	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {

@@ -46,6 +46,9 @@ public class PulseContext extends JNIObject {
 	public void setSinkInputMute(int idx, boolean mute, SuccessCallback cb) {
 		JNISetSinkInputMuteByIndex(getPointer(), mainloop.getPointer(), idx, mute);
 	}
+	public void setSinkInputVolume(int idx, Volume volume, SuccessCallback cb) {
+		JNISetSinkInputVolumeByIndex(getPointer(), mainloop.getPointer(), idx, volume.getVolumes(), cb);
+	}
 	
 	// Client Queries
 	public void getClientInfo(int idx, InfoCallback<ClientInfo> cb) {
@@ -90,6 +93,7 @@ public class PulseContext extends JNIObject {
 	private static final native void JNIGetSinkInputInfo(long pContext, long pMainloop, int idx, InfoCallback cb);
 	private static final native void JNIGetSinkInputInfoList(long pContext, long pMainloop, InfoCallback cb);
 	private static final native void JNISetSinkInputMuteByIndex(long pContext, long pMainloop, int idx, boolean mute);
+	private static synchronized final native void JNISetSinkInputVolumeByIndex(long pContext, long pMainloop, int idx, int[] volumes, SuccessCallback cb);
 	
 	// Client
 	private static final native void JNIGetClientInfo(long pContext, long pMainloop, int idx, InfoCallback cb);

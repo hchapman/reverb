@@ -65,7 +65,7 @@ public class SinkInputAdapter extends StreamNodeAdapter<SinkInput> {
         public void loadNodeIntoViews(SinkInput node) {
         	mNode = node;
         	nodeName.setText(node.getDescriptiveName());
-            nodeVolume.setVolume(node.getVolume());
+            nodeVolume.setNode(node);
         	
         	nodeMute.setOnClickListener(new View.OnClickListener() {
 				@Override

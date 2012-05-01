@@ -26,9 +26,7 @@ public class SinkInput extends StreamNode {
 	public String getAppName() {
 		return mAppName;
 	}
-	public Volume getVolume() {
-		return mVolume;
-	}
+
 	public boolean isMuted() {
 		return false;
 	}
@@ -36,6 +34,10 @@ public class SinkInput extends StreamNode {
 	public void setMute(boolean mute, SuccessCallback cb) {
 		Log.d("Reverb", ""+(mPulse == null));
 		mPulse.setSinkInputMute(mIndex, mute, cb);
+	}
+	public void setVolume(Volume volume, SuccessCallback cb) {
+		Log.d("Reverb", ""+(mPulse == null));
+		mPulse.setSinkInputVolume(mIndex, volume, cb);
 	}
 	
 	public String toString() {

@@ -22,6 +22,9 @@ public class SinkInfo extends StreamNode {
 	public void setMute(boolean mute, SuccessCallback cb) {
 		
 	}
+	public void setVolume(Volume volume, SuccessCallback cb) {
+	
+	}
 	
 	public native Volume getVolume();
 	

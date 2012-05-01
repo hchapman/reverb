@@ -23,6 +23,10 @@ public class Volume {
 	public int get() {
 		return mVolumes[0];
 	}
+	
+	public void changeVolume(int channel, int volume) {
+		mVolumes[channel] = volume;
+	}
 //	public Volume(char channels, int[] values) {
 //		// init it somehow maybe
 //	}

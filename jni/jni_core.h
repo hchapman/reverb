@@ -7,6 +7,7 @@
 typedef struct jni_pa_cb_info {
 	jobject cb_runnable;        	// Object with the run() command
 	pa_threaded_mainloop *m;       	// pa_mainloop for signaling
+	void *to_free;                  // an object to free on success
 } jni_pa_cb_info_t ;
 
 

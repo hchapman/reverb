@@ -60,7 +60,7 @@ public abstract class StreamNodeAdapter<T extends StreamNode> extends BaseAdapte
 		mIndices = sortedKeyList(mNodes.keySet());
 		mContext.runOnUiThread(new Runnable() {
 			public void run() {
-				StreamNodeAdapter.this.notifyDataSetChanged();
+				//StreamNodeAdapter.this.notifyDataSetChanged();
 			}
 		});
 	}
