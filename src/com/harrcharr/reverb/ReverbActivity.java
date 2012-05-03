@@ -34,16 +34,16 @@ public class ReverbActivity extends Activity {
 		m = new Mainloop();
 		c = new PulseContext(m);
 		
-    	final SinkInputAdapter siAdapter = new SinkInputAdapter(this, c);
-    	mSinkInputView = (ListView)findViewById(R.id.sinkInputList);
-    	mSinkInputView.setAdapter(siAdapter);
-    	
+		final SinkInputFragment siFrag = (SinkInputFragment)getFragmentManager()
+				.findFragmentById(R.id.siFrag);
+		siFrag.setPulseContext(c);
+		
     	new Thread(new Runnable() {
 			public void run() {				 
 				c.connect("192.168.0.9");
 				c.subscribe();
-				c.getSinkInputInfoList(siAdapter.getInfoCallback());
-				c.subscribeSinkInput(siAdapter.getSubscriptionCallback());
+				c.getSinkInputInfoList(siFrag.getInfoCallback());
+				c.subscribeSinkInput(siFrag.getSubscriptionCallback());
 			}
     	}).start();
     }

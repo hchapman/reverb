@@ -143,7 +143,7 @@ void sink_info_cb(pa_context* c, const pa_sink_info *i,
 
 }
 
-void sink_input_info_cb(pa_context* c, const pa_sink_info *i,
+void sink_input_info_cb(pa_context* c, const pa_sink_input_info *i,
 		int eol, void *userdata) {
 	JNIEnv *env;
 	jclass cls;
@@ -176,10 +176,12 @@ void sink_input_info_cb(pa_context* c, const pa_sink_info *i,
 	    return;
 	}
 
+	LOGD("C index %d", 	i->index);
+
 	if ((cls = (*env)->GetObjectClass(env, cbdata->cb_runnable))) {
 		if ((mid = (*env)->GetMethodID(env, cls, "run", "(IJ)V"))) {
 			// Run the actual Java callback method
-			(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid, (jint)i->index, (jlong)i);
+			(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid, (jint)(i->index), (jlong)i);
 		}
 	}
 
@@ -242,9 +244,6 @@ void success_cb(pa_context* c, int success, void *userdata) {
 
 	jni_pa_cb_info_t *cbdata = (jni_pa_cb_info_t*)userdata;
 
-	LOGD("freeing %d", cbdata->to_free);
-	LOGD("freeing %d", cbdata->to_free);
-
 	if(cbdata->to_free != NULL) {
 		LOGD("freeing %d", cbdata->to_free);
 		free(cbdata->to_free);
@@ -252,7 +251,6 @@ void success_cb(pa_context* c, int success, void *userdata) {
 	}
 
 	if (cbdata->cb_runnable == NULL) {
-//		(*env)->DeleteGlobalRef(env, cbdata->cb_runnable);
 		free(cbdata);
 		return;
 	}

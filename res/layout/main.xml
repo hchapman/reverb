@@ -4,10 +4,13 @@
     android:layout_height="fill_parent"
     android:orientation="vertical" >
 
-    <ListView
-        android:id="@+id/sinkInputList"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
-    </ListView>
+    <fragment
+        android:id="@+id/siFrag"
+        android:name="com.harrcharr.reverb.SinkInputFragment"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" >
+
+        <!-- Preview: layout=@layout/sink_input_fragment -->
+    </fragment>
 
 </LinearLayout>

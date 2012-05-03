@@ -23,15 +23,15 @@ public class VolumeControl extends LinearLayout {
 	
 	public VolumeControl(Context context) {
 		super(context);
-		ignoreSet = false;
+		setOrientation(VERTICAL);
 	}
 	public VolumeControl(Context context, AttributeSet attr) {
 		super(context, attr);
-		ignoreSet = false;
+		setOrientation(VERTICAL);
 	}
 	public VolumeControl(Context context, AttributeSet attr, int arg) {
 		super(context, attr, arg);
-		ignoreSet = false;
+		setOrientation(VERTICAL);
 	}
 	public VolumeControl(Context context, Volume volume) {
 		this(context);
@@ -46,8 +46,7 @@ public class VolumeControl extends LinearLayout {
 	
 	public synchronized void setVolume(Volume volume) {	
 		mVolume = volume; 
-		if (ignoreSet)
-			return;
+		Log.d("Reverb", "Num channels "+volume.getNumChannels());
 		if (mSliders == null) {			
 			mSliders = new ArrayList<VolumeSlider>();
 			int i = 0;
@@ -56,10 +55,10 @@ public class VolumeControl extends LinearLayout {
 				
 				mSliders.add(v);
 				this.addView(v);
+				Log.d("Reverb", "Addin a volume");
 				i++;
 			}
-		}
-		else if (volume.getNumChannels() > mSliders.size()) {
+		} else if (volume.getNumChannels() > mSliders.size()) {
 			int oldMax = mSliders.size();
 			for (int i = oldMax; i < volume.getNumChannels(); i++) {
 				Log.d("Reverb", "case 1");
@@ -120,9 +119,7 @@ public class VolumeControl extends LinearLayout {
 		}
 		
 		public void setVolume(int volume) {
-			if (!ignoreSet) {
-				mVolumeSlider.setProgress(volume);
-			}
+			mVolumeSlider.setProgress(volume);
 		}
 		
 		@Override
