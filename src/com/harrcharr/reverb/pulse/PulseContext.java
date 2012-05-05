@@ -14,11 +14,6 @@ public class PulseContext extends JNIObject {
 		nStatus = -1;
 	}
 	
-	public void connect(String servername) {
-		JNIConnect(getPointer(), servername);
-		System.out.println("JNIConnect done.");
-	}
-	
 	public void subscribe() {
 		mSubCbPtr = JNISubscribe(getPointer(), mainloop.getPointer());
 	}
@@ -70,6 +65,10 @@ public class PulseContext extends JNIObject {
 		
 	}
 	
+	public boolean isConnected() {
+		return true;
+	}
+	
 	protected void operationSuccess(int success) {
 
 	}
@@ -80,7 +79,13 @@ public class PulseContext extends JNIObject {
 	}
 	
 	private static final native long JNICreate(long pMainloop);
-	private static final native int JNIConnect(long pContext, String server);
+	
+	public final native int connect(String server);
+	public final native void disconnect();
+	
+	public final native void setNotifyCallback(NotifyCallback cb);
+	
+	public final native int getStatus();
 	
 	private static final native long JNISubscribe(long pContext, long pMainloop);
 	private static final native void JNISubscribeSinkInput(long pContext, long pCbs, SubscriptionCallback cb);

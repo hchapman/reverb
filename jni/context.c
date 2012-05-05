@@ -293,41 +293,33 @@ Java_com_harrcharr_reverb_pulse_PulseContext_JNICreate(
 }
 
 JNIEXPORT jint JNICALL
-Java_com_harrcharr_reverb_pulse_PulseContext_JNIConnect(
-		JNIEnv *jenv, jclass jcls, jlong ptr_c, jstring server) {
-//	pa_threaded_mainloop *m = (pa_threaded_mainloop*)ptr_mainloop;
-	pa_context *c = (pa_context *)ptr_c;
+Java_com_harrcharr_reverb_pulse_PulseContext_connect(
+		JNIEnv *jenv, jobject jobj, jstring server) {
+	pa_context *c = (pa_context *)get_obj_ptr(jenv, jobj);
 
-	dlog(0, "%d", c);
-
-    char buf[128];
     const jbyte *srv;
     srv = (*jenv)->GetStringUTFChars(jenv, server, NULL);
     if (srv == NULL) {
         return NULL; /* OutOfMemoryError already thrown */
     }
-    printf("%s", srv);
+
 	int result = pa_context_connect(c, srv, PA_CONTEXT_NOFAIL, NULL);
     (*jenv)->ReleaseStringUTFChars(jenv, server, srv);
-    /* We assume here that the user does not type more than
-     * 127 characters */
-    scanf("%s", buf);
 
-	dlog(0, "connection result %d", result);
-	dlog(0, pa_context_get_server(c));
+	while(pa_context_is_pending(c) != 0) {}
 
-	while(pa_context_is_pending(c) != 0) {
-//		dlog(0, "%i", pa_context_get_state(c));
-	}
+	while(pa_context_get_state(c) != PA_CONTEXT_READY) {}
 
-	while(pa_context_get_state(c) != PA_CONTEXT_READY) {
-//		dlog(0, "%i", pa_context_get_state(c));
-	}
-
-	dlog(0, "holy shit");
-	dlog(0, "%d", pa_context_get_state(c));
+	LOGI("Connected.");
 
 	return result;
+}
+
+JNIEXPORT void JNICALL
+Java_com_harrcharr_reverb_pulse_PulseContext_disconnect(
+		JNIEnv *jenv, jobject jobj) {
+	pa_context *c = (pa_context *)get_obj_ptr(jenv, jobj);
+	pa_context_disconnect(c);
 }
 
 JNIEXPORT void JNICALL

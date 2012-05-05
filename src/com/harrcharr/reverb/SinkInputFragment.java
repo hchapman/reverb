@@ -32,6 +32,15 @@ public class SinkInputFragment extends Fragment {
     
     public void setPulseContext(PulseContext pulse) {
     	mPulse = pulse;
+    	
+    	// Now that we've changed our PulseContext, we have to reinstantiate.
+    	mNodes = new HashMap<Integer, StreamNodeView<SinkInput>>();
+    	getActivity().runOnUiThread(new Runnable() {
+			public void run() {
+				getViewGroup().removeAllViews();
+				Log.d("Reverb", "Removed stale nodes");
+			}
+		});
     }
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
