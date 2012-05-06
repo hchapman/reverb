@@ -1,3 +1,24 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2012 Harrison Chapman.
+# 
+# This file is part of Reverb.
+# 
+#     Reverb is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 2 of the License, or
+#     (at your option) any later version.
+# 
+#     Reverb is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+# 
+#     You should have received a copy of the GNU General Public License
+#     along with Reverb.  If not, see <http://www.gnu.org/licenses/>.
+# 
+# Contributors:
+#     Harrison Chapman - initial API and implementation
+#-------------------------------------------------------------------------------
 #include <jni.h>
 #include <pulse/pulseaudio.h>
 
@@ -302,6 +323,8 @@ Java_com_harrcharr_reverb_pulse_PulseContext_connect(
 	int result = pa_context_connect(c, srv, PA_CONTEXT_NOFAIL, NULL);
     (*jenv)->ReleaseStringUTFChars(jenv, server, srv);
 
+    LOGI(pa_strerror(pa_context_errno(c)));
+
 	return result;
 }
 
@@ -310,6 +333,7 @@ Java_com_harrcharr_reverb_pulse_PulseContext_disconnect(
 		JNIEnv *jenv, jobject jobj) {
 	pa_context *c = (pa_context *)get_obj_ptr(jenv, jobj);
 	pa_context_disconnect(c);
+	pa_context_unref(c);
 }
 
 JNIEXPORT jint JNICALL

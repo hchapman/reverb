@@ -1,3 +1,24 @@
+/*******************************************************************************
+ * Copyright (c) 2012 Harrison Chapman.
+ * 
+ * This file is part of Reverb.
+ * 
+ *     Reverb is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 2 of the License, or
+ *     (at your option) any later version.
+ * 
+ *     Reverb is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ * 
+ *     You should have received a copy of the GNU General Public License
+ *     along with Reverb.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Contributors:
+ *     Harrison Chapman - initial API and implementation
+ ******************************************************************************/
 package com.harrcharr.reverb;
 
 import java.util.ArrayList;
@@ -79,12 +100,31 @@ public class ReverbActivity extends Activity {
     }
     
     public void connect(String server) {
-
-
+    	final SinkInputFragment siFrag = (SinkInputFragment)getFragmentManager()
+				.findFragmentById(R.id.siFrag);
+    
+    	
     	Log.d("Reverb", server);
     	
     	if(c.isConnected()) {
     		c.disconnect();
+    		c = new PulseContext(m);
+    		
+    		c.setStateCallback(new NotifyCallback() {
+    			@Override
+    			public void run() {
+    				Log.d("Reverb", "Context status is now "+c.getStatus());
+    				
+    				if (c.getStatus() == 4) {
+    					c.subscribe();
+    					
+    			    	siFrag.setPulseContext(c);
+    			    	
+    					c.getSinkInputInfoList(siFrag.getInfoCallback());
+    					c.subscribeSinkInput(siFrag.getSubscriptionCallback());
+    				}
+    			}
+    		});
     	}
     	
     	c.connect(server);
