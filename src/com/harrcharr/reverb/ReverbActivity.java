@@ -51,26 +51,35 @@ public class ReverbActivity extends Activity {
     	
     	sinkInputs = new ArrayList<SinkInput>();
 
+    	final SinkInputFragment siFrag = (SinkInputFragment)getFragmentManager()
+				.findFragmentById(R.id.siFrag);
+    	
 		m = new Mainloop();
 		c = new PulseContext(m);
 		
-		c.setNotifyCallback(new NotifyCallback() {
+		c.setStateCallback(new NotifyCallback() {
 			@Override
 			public void run() {
 				Log.d("Reverb", "Context status is now "+c.getStatus());
+				
+				if (c.getStatus() == 4) {
+					c.subscribe();
+					
+			    	siFrag.setPulseContext(c);
+			    	
+					c.getSinkInputInfoList(siFrag.getInfoCallback());
+					c.subscribeSinkInput(siFrag.getSubscriptionCallback());
+				}
 			}
 		});
 		
-		final SinkInputFragment siFrag = (SinkInputFragment)getFragmentManager()
-				.findFragmentById(R.id.siFrag);
 		siFrag.setPulseContext(c);
 
 		connect(SERVER);
     }
     
     public void connect(String server) {
-    	final SinkInputFragment siFrag = (SinkInputFragment)getFragmentManager()
-				.findFragmentById(R.id.siFrag);
+
 
     	Log.d("Reverb", server);
     	
@@ -79,12 +88,7 @@ public class ReverbActivity extends Activity {
     	}
     	
     	c.connect(server);
-		c.subscribe();
 		
-    	siFrag.setPulseContext(c);
-    	
-		c.getSinkInputInfoList(siFrag.getInfoCallback());
-		c.subscribeSinkInput(siFrag.getSubscriptionCallback());
     }
     
     @Override

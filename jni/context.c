@@ -78,7 +78,9 @@ void context_subscription_cb(pa_context* c, pa_subscription_event_type_t t,
 }
 
 void context_state_cb(pa_context* c, void* userdata) {
+
 	JNIEnv *env;
+	jclass cls;
 	jmethodID mid;
 	jenv_status_t status;
 
@@ -86,12 +88,12 @@ void context_state_cb(pa_context* c, void* userdata) {
 		return;
 	}
 
-	if (jcls_context) {
-		if ((mid = (*env)->GetStaticMethodID(env, jcls_context,
-				"statusChanged", "(JI)V"))) {
+	jni_pa_cb_info_t *cbdata = (jni_pa_cb_info_t*)userdata;
+
+	if ((cls = (*env)->GetObjectClass(env, cbdata->cb_runnable))) {
+		if ((mid = (*env)->GetMethodID(env, cls, "run", "()V"))) {
 			// Run the actual Java callback method
-			(*env)->CallStaticVoidMethod(env, jcls_context, mid, (jlong)c,
-					(jint)pa_context_get_state(c));
+			(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid);
 		}
 	}
 
@@ -283,13 +285,7 @@ Java_com_harrcharr_reverb_pulse_PulseContext_JNICreate(
 	pa_mainloop_api *api = pa_threaded_mainloop_get_api(m);
 	pa_context *c = pa_context_new(api, "primary");
 
-	pa_context_set_state_callback(c, context_state_cb, m);
-
-	dlog(0, "hello from c!");
-	dlog(0, "%d", c);
-
 	return c;
-//	context_ptr_to_jobject(jenv, jobj, c);
 }
 
 JNIEXPORT jint JNICALL
@@ -306,12 +302,6 @@ Java_com_harrcharr_reverb_pulse_PulseContext_connect(
 	int result = pa_context_connect(c, srv, PA_CONTEXT_NOFAIL, NULL);
     (*jenv)->ReleaseStringUTFChars(jenv, server, srv);
 
-	while(pa_context_is_pending(c) != 0) {}
-
-	while(pa_context_get_state(c) != PA_CONTEXT_READY) {}
-
-	LOGI("Connected.");
-
 	return result;
 }
 
@@ -320,6 +310,26 @@ Java_com_harrcharr_reverb_pulse_PulseContext_disconnect(
 		JNIEnv *jenv, jobject jobj) {
 	pa_context *c = (pa_context *)get_obj_ptr(jenv, jobj);
 	pa_context_disconnect(c);
+}
+
+JNIEXPORT jint JNICALL
+Java_com_harrcharr_reverb_pulse_PulseContext_getStatus(
+		JNIEnv *jenv, jobject jobj) {
+	pa_context *c = (pa_context *)get_obj_ptr(jenv, jobj);
+	return pa_context_get_state(c);
+}
+
+JNIEXPORT void JNICALL
+Java_com_harrcharr_reverb_pulse_PulseContext_setStateCallback(
+		JNIEnv *jenv, jobject jobj, jobject runnable) {
+	pa_context *c = (pa_context *)get_obj_ptr(jenv, jobj);
+
+	jni_pa_cb_info_t *cbinfo = (jni_pa_cb_info_t*)malloc(sizeof(jni_pa_cb_info_t));
+	cbinfo->cb_runnable = (*jenv)->NewGlobalRef(jenv, runnable);
+	cbinfo->m = NULL;
+	cbinfo->to_free = NULL;
+
+	pa_context_set_state_callback(c, context_state_cb, cbinfo);
 }
 
 JNIEXPORT void JNICALL

@@ -83,7 +83,7 @@ public class PulseContext extends JNIObject {
 	public final native int connect(String server);
 	public final native void disconnect();
 	
-	public final native void setNotifyCallback(NotifyCallback cb);
+	public final native void setStateCallback(NotifyCallback cb);
 	
 	public final native int getStatus();
 	
