@@ -127,7 +127,12 @@ public class ReverbActivity extends Activity {
     		});
     	}
     	
-    	c.connect(server);
+    	try {
+			c.connect(server);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
     }
     

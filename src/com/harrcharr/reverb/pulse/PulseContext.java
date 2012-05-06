@@ -35,6 +35,13 @@ public class PulseContext extends JNIObject {
 		nStatus = -1;
 	}
 	
+	public void connect(String server) throws Exception {
+		if (_connect(server) < 0) {
+			
+		}
+	}
+	private final native int _connect(String server);
+	
 	public void subscribe() {
 		mSubCbPtr = JNISubscribe(getPointer(), mainloop.getPointer());
 	}
@@ -101,7 +108,7 @@ public class PulseContext extends JNIObject {
 	
 	private static final native long JNICreate(long pMainloop);
 	
-	public final native int connect(String server);
+	
 	public final native void disconnect();
 	
 	public final native void setStateCallback(NotifyCallback cb);
