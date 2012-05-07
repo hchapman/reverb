@@ -95,6 +95,17 @@ void init_class_helper(JNIEnv *env,
 	(*clsptr) = (*env)->NewGlobalRef(env, cls);
 }
 
+void throw_exception(JNIEnv *env, const char *name, const char *msg)
+{
+	jclass cls = (*env)->FindClass(env, name);
+	/* if cls is NULL, an exception has already been thrown */
+	if (cls != NULL) {
+		(*env)->ThrowNew(env, cls, msg);
+	}
+	/* free the local ref */
+	(*env)->DeleteLocalRef(env, cls);
+}
+
 JNIEXPORT jint JNICALL JNI_OnLoad(
                 JavaVM *jvm, void *reserved) {
 	(void)reserved;

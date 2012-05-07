@@ -324,9 +324,10 @@ Java_com_harrcharr_reverb_pulse_PulseContext_connect(
 	int result = pa_context_connect(c, srv, PA_CONTEXT_NOFAIL, NULL);
     (*jenv)->ReleaseStringUTFChars(jenv, server, srv);
 
-    LOGI(pa_strerror(pa_context_errno(c)));
-
-	return result;
+    if (result < 0) {
+    	// An error occurred during server connection
+    	throw_exception(jenv, "java/lang/Exception", pa_strerror(pa_context_errno(c)));
+    }
 }
 
 JNIEXPORT void JNICALL
