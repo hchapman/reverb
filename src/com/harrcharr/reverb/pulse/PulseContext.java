@@ -44,6 +44,10 @@ public class PulseContext extends JNIObject {
 		mCallbacks = new TreeSet<JniCallback>();
 	}
 	
+	public long getMainloopPointer() {
+		return mainloop.getPointer();
+	}
+	
 	public final native void connect(String server)
 		throws Exception;
 	

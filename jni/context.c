@@ -23,11 +23,11 @@
 #include <jni.h>
 #include <pulse/pulseaudio.h>
 
-#include "context_util.h"
-
 #include "jni_core.h"
 #include "context.h"
 #include "logging.h"
+
+#include "context_util.h"
 
 JNIEXPORT jlong JNICALL
 Java_com_harrcharr_reverb_pulse_PulseContext_JNICreate(
@@ -117,53 +117,40 @@ Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetSinkInfoByIndex(
 JNIEXPORT void JNICALL
 Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetSinkInputInfoList(
 		JNIEnv *jenv, jobject jcontext, jlong m_ptr, jobject runnable) {
+	LOGD("NATIVE: GetSinkInputInfoList - start");
 	pa_context *c = get_context_ptr(jenv, jcontext);
 	pa_threaded_mainloop *m = get_mainloop_ptr(jenv, jcontext);
-
+	LOGD("c %d m %d", c, m);
 	pa_threaded_mainloop_lock(m);
 
 	pa_operation *o;
-	dlog(0, "About to get sink input info list");
+	LOGD("NATIVE: GetSinkInputInfoList - pointers ready");
 
 	jni_pa_cb_info_t *cbinfo = new_cbinfo(jenv, jcontext, runnable, m, NULL);
-			(jni_pa_cb_info_t*)malloc(sizeof(jni_pa_cb_info_t));
-	cbinfo->cb_runnable = get_cb_globalref(jenv, jobj, runnable);
-	cbinfo->m = m;
-	cbinfo->to_free = NULL;
+
 	o = pa_context_get_sink_input_info_list(c, sink_input_info_cb, cbinfo);
 	assert(o);
-	dlog(0, "Sink input info list call is a go!");
-//	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-//		dlog(0, "Waiting for the mainloop in sink info!");
-//		pa_threaded_mainloop_wait(m);
-//	}
-	dlog(0, "Mainloop is done waiting");
+
 	pa_operation_unref(o);
 	pa_threaded_mainloop_unlock(m);
 }
 
 JNIEXPORT void JNICALL
 Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetSinkInputInfo(
-		JNIEnv *jenv, jobject jobj, jlong m_ptr, jint idx,
+		JNIEnv *jenv, jobject jcontext, jlong m_ptr, jint idx,
 		jobject runnable) {
-	pa_context *c = (pa_context *)c_ptr;
-	pa_threaded_mainloop *m = (pa_threaded_mainloop *)m_ptr;
+	pa_context *c = get_context_ptr(jenv, jcontext);
+	pa_threaded_mainloop *m = get_mainloop_ptr(jenv, jcontext);
 	pa_threaded_mainloop_lock(m);
 
 	pa_operation *o;
 	dlog(0, "About to get sink input info %d", m);
 
-	jni_pa_cb_info_t *cbinfo = (jni_pa_cb_info_t*)malloc(sizeof(jni_pa_cb_info_t));
-	cbinfo->cb_runnable = (*jenv)->NewGlobalRef(jenv, runnable);
-	cbinfo->m = m;
-	cbinfo->to_free = NULL;
+	jni_pa_cb_info_t *cbinfo = new_cbinfo(jenv, jcontext, runnable, m, NULL);
 	o = pa_context_get_sink_input_info(c, (int)idx, sink_input_info_cb, cbinfo);
 	assert(o);
 	dlog(0, "Sink input info call is a go!");
-//	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-//		dlog(0, "Waiting for the mainloop in sink info!");
-//		pa_threaded_mainloop_wait(m);
-//	}
+
 	dlog(0, "Mainloop is done waiting 222222");
 	pa_operation_unref(o);
 	pa_threaded_mainloop_unlock(m);

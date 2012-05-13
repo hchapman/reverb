@@ -20,6 +20,7 @@
 *    Harrison Chapman - initial API and implementation
 *******************************************************************************/
 
+#include "logging.h"
 #include "context_util.h"
 
 extern jclass jcls_context;
@@ -33,6 +34,25 @@ jni_pa_cb_info_t *new_cbinfo(JNIEnv *jenv, jobject jcontext, jobject jcb,
 
 	return cbinfo;
 }
+
+pa_context *get_context_ptr(JNIEnv *jenv, jobject jcontext) {
+	jfieldID fid = (*jenv)->GetFieldID(jenv, jcls_context, "mPointer", "J");
+	if (fid == NULL)
+		return;
+
+	return (*jenv)->GetLongField(jenv, jcontext, fid);
+}
+
+pa_threaded_mainloop *get_mainloop_ptr(JNIEnv *jenv, jobject jcontext) {
+	jmethodID mid = (*jenv)->GetMethodID(jenv, jcls_context, "getMainloopPointer", "()J");
+	if (mid == NULL) {
+		LOGE("There was an error getting the mainloop pointer method ID");
+		return NULL;
+	}
+
+	return (*jenv)->CallLongMethod(jenv, jcontext, mid);
+}
+
 
 /*
  * Get a new global reference, saving knowledge of it in the context (for freeing)

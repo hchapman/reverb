@@ -20,8 +20,13 @@
 *    Harrison Chapman - initial API and implementation
 *******************************************************************************/
 
+#ifndef __PA_CONTEXT_UTIL_H
+#define __PA_CONTEXT_UTIL_H
+
 #include <jni.h>
-#include <pulseaudio/pulse.h>
+#include <pulse/pulseaudio.h>
+
+#include "jni_core.h"
 
 // A structure holding (global) references to runnables, per event type
 typedef struct jni_pa_event_cbs {
@@ -32,8 +37,8 @@ typedef struct jni_pa_event_cbs {
 jni_pa_cb_info_t *new_cbinfo(JNIEnv *jenv, jobject jcontext, jobject jcb,
 		pa_threaded_mainloop *m, void *to_free);
 
-pa_context *get_context_ptr(JNIEnv *jenv, jobject c);
-pa_threaded_mainloop *get_mainloop_ptr(JNIEnv *jenv, jobject c);
+pa_context *get_context_ptr(JNIEnv *jenv, jobject jcontext);
+pa_threaded_mainloop *get_mainloop_ptr(JNIEnv *jenv, jobject jcontext);
 
 // For dealing with callback global references
 jobject get_cb_globalref(JNIEnv *jenv, jobject c, jobject ref);
@@ -51,4 +56,6 @@ void sink_input_info_cb(pa_context* c, const pa_sink_input_info *i,
 void client_info_cb(pa_context* c, const pa_sink_info *i,
 		int eol, void *userdata);
 void success_cb(pa_context* c, int success, void *userdata);
+
+#endif
 
