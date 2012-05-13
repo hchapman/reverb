@@ -41,10 +41,10 @@ import com.harrcharr.reverb.pulse.PulseContext;
 import com.harrcharr.reverb.pulse.SinkInput;
 
 public class ReverbActivity extends Activity {
-	protected String SERVER = "192.168.0.2";
+	protected final String DEFAULT_SERVER = "192.168.1.104";
 	
 	protected Mainloop m;
-	protected PulseContext c;
+	protected PulseContext mPulse;
 	
 	protected ListView mSinkInputView;
 	protected ArrayList<SinkInput> sinkInputs;
@@ -60,7 +60,7 @@ public class ReverbActivity extends Activity {
     	getActionBar().setDisplayShowCustomEnabled(true);
     	getActionBar().setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
     	
-    	((EditText)getActionBar().getCustomView().findViewById(R.id.serverUrl)).setText(SERVER);
+    	((EditText)getActionBar().getCustomView().findViewById(R.id.serverUrl)).setText(DEFAULT_SERVER);
     	((Button)getActionBar().getCustomView().findViewById(R.id.serverChange)).setOnClickListener(
     			new OnClickListener() {
 					
@@ -76,27 +76,25 @@ public class ReverbActivity extends Activity {
 				.findFragmentById(R.id.siFrag);
     	
 		m = new Mainloop();
-		c = new PulseContext(m);
+		mPulse = new PulseContext(m);
 		
-		c.setStateCallback(new NotifyCallback() {
+		mPulse.setStateCallback(new NotifyCallback() {
 			@Override
 			public void run() {
-				Log.d("Reverb", "Context status is now "+c.getStatus());
+				Log.d("Reverb", "Context status is now "+mPulse.getStatus());
 				
-				if (c.getStatus() == 4) {
-					c.subscribe();
+				if (mPulse.getStatus() == 4) {
+					mPulse.subscribe();
 					
-			    	siFrag.setPulseContext(c);
+			    	siFrag.setPulseContext(mPulse);
 			    	
-					c.getSinkInputInfoList(siFrag.getInfoCallback());
-					c.subscribeSinkInput(siFrag.getSubscriptionCallback());
+					mPulse.getSinkInputInfoList(siFrag.getInfoCallback());
+					//mPulse.subscribeSinkInput(siFrag.getSubscriptionCallback());
 				}
 			}
 		});
-		
-		siFrag.setPulseContext(c);
 
-		connect(SERVER);
+		connect(DEFAULT_SERVER);
     }
     
     public void connect(String server) {
@@ -106,31 +104,32 @@ public class ReverbActivity extends Activity {
     	
     	Log.d("Reverb", server);
     	
-    	if(c.isConnected()) {
-    		c.disconnect();
-    		c = new PulseContext(m);
+    	if(mPulse.isConnected()) {
+    		mPulse.close();
+    		mPulse = new PulseContext(m);
     		
-    		c.setStateCallback(new NotifyCallback() {
+    		mPulse.setStateCallback(new NotifyCallback() {
     			@Override
     			public void run() {
-    				Log.d("Reverb", "Context status is now "+c.getStatus());
+    				Log.d("Reverb", "Context status is now "+mPulse.getStatus());
     				
-    				if (c.getStatus() == 4) {
-    					c.subscribe();
+    				if (mPulse.getStatus() == 4) {
+    					mPulse.subscribe();
     					
-    			    	siFrag.setPulseContext(c);
+    			    	siFrag.setPulseContext(mPulse);
     			    	
-    					c.getSinkInputInfoList(siFrag.getInfoCallback());
-    					c.subscribeSinkInput(siFrag.getSubscriptionCallback());
+    					mPulse.getSinkInputInfoList(siFrag.getInfoCallback());
+    					mPulse.subscribeSinkInput(siFrag.getSubscriptionCallback());
     				}
     			}
     		});
     	}
     	
     	try {
-			c.connect(server);
+			mPulse.connect(server);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
+			Log.e("Reverb", "weird");
 			e.printStackTrace();
 		}
 		

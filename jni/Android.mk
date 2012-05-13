@@ -33,6 +33,6 @@ LOCAL_MODULE := pulse_interface
 
 LOCAL_LDLIBS := -L$(SYSROOT)/usr/lib -llog
 LOCAL_SHARED_LIBRARIES := libjson libpulse
-LOCAL_SRC_FILES := jni_core.c logging.c pulse.c context.c mainloop.c wrap_struct.c
+LOCAL_SRC_FILES := jni_core.c logging.c pulse.c context.c mainloop.c wrap_struct.c jni_util.c
 include $(BUILD_SHARED_LIBRARY)
 

@@ -21,6 +21,6 @@
  ******************************************************************************/
 package com.harrcharr.reverb.pulse;
 
-public interface SuccessCallback {
-	public void run(int result);
+public abstract class SuccessCallback extends JniCallback {
+	public abstract void run(int result);
 }

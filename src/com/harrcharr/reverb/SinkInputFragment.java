@@ -105,7 +105,7 @@ public class SinkInputFragment extends Fragment {
 		return mSubscriptionCallback;
 	}
     
-	private class SinkInputCallback implements InfoCallback<SinkInput> {
+	private class SinkInputCallback extends InfoCallback<SinkInput> {
 		public void run(int idx, long iPtr) {
 			final SinkInput si = new SinkInput(SinkInputFragment.this.getPulseContext(), iPtr);
 			Log.d("Reverb [adapter]", "We're in a SinkInputCallback run().");

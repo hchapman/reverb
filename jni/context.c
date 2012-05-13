@@ -23,282 +23,11 @@
 #include <jni.h>
 #include <pulse/pulseaudio.h>
 
+#include "context_util.h"
+
 #include "jni_core.h"
 #include "context.h"
 #include "logging.h"
-
-extern jclass jcls_context;
-
-// A structure holding (global) references to runnables, per event type
-typedef struct jni_pa_event_cbs {
-	jobject sink_input_cbo;
-	jobject sink_cbo;
-} jni_pa_event_cbs_t ;
-
-void call_subscription_run(pa_subscription_event_type_t t, uint32_t idx, jobject runnable) {
-	JNIEnv *env;
-	jclass cls;
-	jmethodID mid;
-	jenv_status_t status;
-
-	if ((status = get_jnienv(&env)) == JENV_UNSUCCESSFUL) {
-		return;
-	}
-
-	if ((cls = (*env)->GetObjectClass(env, runnable))) {
-		// For a SubscriptionCallback, our parameters are (int event, int idx)
-		if ((mid = (*env)->GetMethodID(env, cls, "run", "(II)V"))) {
-			// Run the actual Java callback method
-			(*env)->CallVoidMethod(env, runnable, mid, (jint)t, (jint)idx);
-		}
-	}
-
-	detach_jnienv(status);
-}
-
-void context_subscription_cb(pa_context* c, pa_subscription_event_type_t t,
-		uint32_t idx, void *userdata) {
-	jni_pa_event_cbs_t *cbs = (jni_pa_event_cbs_t *)userdata;
-
-    switch (t & PA_SUBSCRIPTION_EVENT_FACILITY_MASK) {
-        case PA_SUBSCRIPTION_EVENT_SINK:
-//            if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE)
-//                w->removeSink(index);
-//            else {
-//                pa_operation *o;
-//                if (!(o = pa_context_get_sink_info_by_index(c, index, sink_cb, w))) {
-//                    show_error(_("pa_context_get_sink_info_by_index() failed"));
-//                    return;
-//                }
-//                pa_operation_unref(o);
-//            }
-            break;
-
-        case PA_SUBSCRIPTION_EVENT_SOURCE:
-        	break;
-
-        case PA_SUBSCRIPTION_EVENT_SINK_INPUT:
-        	LOGD("Remove enum is %d", PA_SUBSCRIPTION_EVENT_REMOVE);
-
-        	if (cbs->sink_input_cbo != NULL)
-        		call_subscription_run(t & PA_SUBSCRIPTION_EVENT_TYPE_MASK,
-        				idx, cbs->sink_input_cbo);
-            break;
-
-        case PA_SUBSCRIPTION_EVENT_SOURCE_OUTPUT:
-            break;
-
-        case PA_SUBSCRIPTION_EVENT_CLIENT:
-            break;
-
-        case PA_SUBSCRIPTION_EVENT_SERVER:
-            break;
-
-        case PA_SUBSCRIPTION_EVENT_CARD:
-            break;
-    }
-}
-
-void context_state_cb(pa_context* c, void* userdata) {
-
-	JNIEnv *env;
-	jclass cls;
-	jmethodID mid;
-	jenv_status_t status;
-
-	if ((status = get_jnienv(&env)) == JENV_UNSUCCESSFUL) {
-		return;
-	}
-
-	jni_pa_cb_info_t *cbdata = (jni_pa_cb_info_t*)userdata;
-
-	if ((cls = (*env)->GetObjectClass(env, cbdata->cb_runnable))) {
-		if ((mid = (*env)->GetMethodID(env, cls, "run", "()V"))) {
-			// Run the actual Java callback method
-			(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid);
-		}
-	}
-
-	detach_jnienv(status);
-}
-
-void sink_info_cb(pa_context* c, const pa_sink_info *i,
-		int eol, void *userdata) {
-	JNIEnv *env;
-	jclass cls;
-	jmethodID mid;
-	jenv_status_t status;
-
-	if ((status = get_jnienv(&env)) == JENV_UNSUCCESSFUL) {
-		return;
-	}
-
-	jni_pa_cb_info_t *cbdata = (jni_pa_cb_info_t*)userdata;
-
-    pa_threaded_mainloop *m = cbdata->m;
-    assert(m);
-
-	if (eol < 0) {
-		LOGE("Error returned from a sink info query");
-	    pa_threaded_mainloop_signal(m, 0);
-	    (*env)->DeleteGlobalRef(env, cbdata->cb_runnable);
-	    free(cbdata);
-	    detach_jnienv(status);
-	    return;
-	}
-
-	if (eol > 0) {
-		pa_threaded_mainloop_signal(m, 0);
-	    (*env)->DeleteGlobalRef(env, cbdata->cb_runnable);
-	    free(cbdata);
-	    detach_jnienv(status);
-	    return;
-	}
-
-	if ((cls = (*env)->GetObjectClass(env, cbdata->cb_runnable))) {
-		if ((mid = (*env)->GetMethodID(env, cls, "run", "(IJ)V"))) {
-			// Run the actual Java callback method
-			(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid, (jint)i->index, (jlong)i);
-		}
-	}
-
-	detach_jnienv(status);
-	pa_threaded_mainloop_signal(m, 0);
-
-}
-
-void sink_input_info_cb(pa_context* c, const pa_sink_input_info *i,
-		int eol, void *userdata) {
-	JNIEnv *env;
-	jclass cls;
-	jmethodID mid;
-	jenv_status_t status;
-
-	if ((status = get_jnienv(&env)) == JENV_UNSUCCESSFUL) {
-		return;
-	}
-
-	jni_pa_cb_info_t *cbdata = (jni_pa_cb_info_t*)userdata;
-
-    pa_threaded_mainloop *m = cbdata->m;
-    assert(m);
-
-	if (eol < 0) {
-		LOGE("Error returned from a sink info query");
-	    pa_threaded_mainloop_signal(m, 0);
-	    (*env)->DeleteGlobalRef(env, cbdata->cb_runnable);
-	    free(cbdata);
-	    detach_jnienv(status);
-	    return;
-	}
-
-	if (eol > 0) {
-		pa_threaded_mainloop_signal(m, 0);
-	    (*env)->DeleteGlobalRef(env, cbdata->cb_runnable);
-	    free(cbdata);
-	    detach_jnienv(status);
-	    return;
-	}
-
-	LOGD("C index %d", 	i->index);
-
-	if ((cls = (*env)->GetObjectClass(env, cbdata->cb_runnable))) {
-		if ((mid = (*env)->GetMethodID(env, cls, "run", "(IJ)V"))) {
-			// Run the actual Java callback method
-			(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid, (jint)(i->index), (jlong)i);
-		}
-	}
-
-	detach_jnienv(status);
-	pa_threaded_mainloop_signal(m, 0);
-
-}
-
-void client_info_cb(pa_context* c, const pa_sink_info *i,
-		int eol, void *userdata) {
-	JNIEnv *env;
-	jclass cls;
-	jmethodID mid;
-	jenv_status_t status;
-
-	if ((status = get_jnienv(&env)) == JENV_UNSUCCESSFUL) {
-		return;
-	}
-
-	jni_pa_cb_info_t *cbdata = (jni_pa_cb_info_t*)userdata;
-
-    pa_threaded_mainloop *m = cbdata->m;
-    assert(m);
-
-	if (eol < 0) {
-		LOGE("Error returned from a client info query");
-	    pa_threaded_mainloop_signal(m, 0);
-	    (*env)->DeleteGlobalRef(env, cbdata->cb_runnable);
-	    free(cbdata);
-	    detach_jnienv(status);
-	    return;
-	}
-
-	if (eol > 0) {
-		pa_threaded_mainloop_signal(m, 0);
-	    (*env)->DeleteGlobalRef(env, cbdata->cb_runnable);
-	    free(cbdata);
-	    detach_jnienv(status);
-	    return;
-	}
-
-	if ((cls = (*env)->GetObjectClass(env, cbdata->cb_runnable))) {
-		if ((mid = (*env)->GetMethodID(env, cls, "run", "(IJ)V"))) {
-			// Run the actual Java callback method
-			(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid, (jint)i->index, (jlong)i);
-		}
-	}
-
-	detach_jnienv(status);
-	pa_threaded_mainloop_signal(m, 0);
-
-}
-
-void success_cb(pa_context* c, int success, void *userdata) {
-	LOGD("freeing");
-	JNIEnv *env;
-	jclass cls;
-	jmethodID mid;
-	jenv_status_t status;
-
-	jni_pa_cb_info_t *cbdata = (jni_pa_cb_info_t*)userdata;
-
-	if(cbdata->to_free != NULL) {
-		LOGD("freeing %d", cbdata->to_free);
-		free(cbdata->to_free);
-		cbdata->to_free = NULL;
-	}
-
-	if (cbdata->cb_runnable == NULL) {
-		free(cbdata);
-		return;
-	}
-
-	if ((status = get_jnienv(&env)) == JENV_UNSUCCESSFUL) {
-		return;
-	}
-
-    pa_threaded_mainloop *m = cbdata->m;
-    assert(m);
-
-	if ((cls = (*env)->GetObjectClass(env, cbdata->cb_runnable))) {
-		if ((mid = (*env)->GetMethodID(env, cls, "run", "(IJ)V"))) {
-			// Run the actual Java callback method
-			//(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid, (jint)i->index, (jlong)i);
-		}
-	}
-
-	detach_jnienv(status);
-	pa_threaded_mainloop_signal(m, 0);
-
-	(*env)->DeleteGlobalRef(env, cbdata->cb_runnable);
-	free(cbdata);
-}
 
 JNIEXPORT jlong JNICALL
 Java_com_harrcharr_reverb_pulse_PulseContext_JNICreate(
@@ -380,29 +109,30 @@ Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetSinkInfoByIndex(
 //		dlog(0, "Waiting for the mainloop in sink info!");
 //		pa_threaded_mainloop_wait(m);
 //	}
-	dlog(0, "Mainloop is done waiting");
+	dlog(0, "Mainloop is done waiting Oh it was this");
 	pa_operation_unref(o);
 	pa_threaded_mainloop_unlock(m);
 }
 
 JNIEXPORT void JNICALL
 Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetSinkInputInfoList(
-		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr,
-		jobject runnable) {
-	pa_context *c = (pa_context *)c_ptr;
-	pa_threaded_mainloop *m = (pa_threaded_mainloop *)m_ptr;
+		JNIEnv *jenv, jobject jcontext, jlong m_ptr, jobject runnable) {
+	pa_context *c = get_context_ptr(jenv, jcontext);
+	pa_threaded_mainloop *m = get_mainloop_ptr(jenv, jcontext);
+
 	pa_threaded_mainloop_lock(m);
 
 	pa_operation *o;
-	dlog(0, "About to get sink info %d", m);
+	dlog(0, "About to get sink input info list");
 
-	jni_pa_cb_info_t *cbinfo = (jni_pa_cb_info_t*)malloc(sizeof(jni_pa_cb_info_t));
-	cbinfo->cb_runnable = (*jenv)->NewGlobalRef(jenv, runnable);
+	jni_pa_cb_info_t *cbinfo = new_cbinfo(jenv, jcontext, runnable, m, NULL);
+			(jni_pa_cb_info_t*)malloc(sizeof(jni_pa_cb_info_t));
+	cbinfo->cb_runnable = get_cb_globalref(jenv, jobj, runnable);
 	cbinfo->m = m;
 	cbinfo->to_free = NULL;
 	o = pa_context_get_sink_input_info_list(c, sink_input_info_cb, cbinfo);
 	assert(o);
-	dlog(0, "Sink info call is a go!");
+	dlog(0, "Sink input info list call is a go!");
 //	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
 //		dlog(0, "Waiting for the mainloop in sink info!");
 //		pa_threaded_mainloop_wait(m);
@@ -414,14 +144,14 @@ Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetSinkInputInfoList(
 
 JNIEXPORT void JNICALL
 Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetSinkInputInfo(
-		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr, jint idx,
+		JNIEnv *jenv, jobject jobj, jlong m_ptr, jint idx,
 		jobject runnable) {
 	pa_context *c = (pa_context *)c_ptr;
 	pa_threaded_mainloop *m = (pa_threaded_mainloop *)m_ptr;
 	pa_threaded_mainloop_lock(m);
 
 	pa_operation *o;
-	dlog(0, "About to get sink info %d", m);
+	dlog(0, "About to get sink input info %d", m);
 
 	jni_pa_cb_info_t *cbinfo = (jni_pa_cb_info_t*)malloc(sizeof(jni_pa_cb_info_t));
 	cbinfo->cb_runnable = (*jenv)->NewGlobalRef(jenv, runnable);
@@ -429,12 +159,12 @@ Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetSinkInputInfo(
 	cbinfo->to_free = NULL;
 	o = pa_context_get_sink_input_info(c, (int)idx, sink_input_info_cb, cbinfo);
 	assert(o);
-	dlog(0, "Sink info call is a go!");
+	dlog(0, "Sink input info call is a go!");
 //	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
 //		dlog(0, "Waiting for the mainloop in sink info!");
 //		pa_threaded_mainloop_wait(m);
 //	}
-	dlog(0, "Mainloop is done waiting");
+	dlog(0, "Mainloop is done waiting 222222");
 	pa_operation_unref(o);
 	pa_threaded_mainloop_unlock(m);
 }
@@ -597,12 +327,14 @@ Java_com_harrcharr_reverb_pulse_PulseContext_JNISubscribe(
 
 JNIEXPORT void JNICALL
 Java_com_harrcharr_reverb_pulse_PulseContext_JNISubscribeSinkInput(
-		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong cbo_ptr, jobject runnable) {
-	pa_context *c = (pa_context *)c_ptr;
-	jni_pa_event_cbs_t *cbs = (jni_pa_event_cbs_t *)cbo_ptr;
+		JNIEnv *jenv, jobject cobj, jlong cbo_ptr, jobject runnable) {
+	pa_context *c = (pa_context *)get_obj_ptr(jenv, cobj);
+	jni_pa_event_cbs_t *cbs = (jni_pa_event_cbs_t *)get_pointer_field(jenv, cobj, "mSubCbPtr");
 
 	if (cbs->sink_input_cbo != NULL) {
-		(*jenv)->DeleteGlobalRef(jenv, cbs->sink_input_cbo);
+		del_cb_globalref(jenv, runnable);
 	}
-	cbs->sink_input_cbo = (*jenv)->NewGlobalRef(jenv, runnable);
+	if (runnable != NULL) {
+		cbs->sink_input_cbo = get_cb_globalref(jenv, cobj, runnable);
+	}
 }

@@ -21,11 +21,18 @@
  ******************************************************************************/
 package com.harrcharr.reverb.pulse;
 
+import java.nio.ByteBuffer;
+import java.util.TreeSet;
+
 public class PulseContext extends JNIObject {
 	protected Runnable cbStatusChanged;
 	protected Mainloop mainloop;
 	
+	protected TreeSet<JniCallback> mCallbacks;
+	
 	protected long mSubCbPtr;
+	
+	protected ByteBuffer mCbPtrs;
 	
 	protected int nStatus;
 	
@@ -33,6 +40,8 @@ public class PulseContext extends JNIObject {
 		super(JNICreate(m.getPointer()));
 		mainloop = m;
 		nStatus = -1;
+		
+		mCallbacks = new TreeSet<JniCallback>();
 	}
 	
 	public final native void connect(String server)
@@ -59,7 +68,7 @@ public class PulseContext extends JNIObject {
 		JNIGetSinkInputInfo(getPointer(), mainloop.getPointer(), idx, cb);		
 	}
 	public void getSinkInputInfoList(InfoCallback<SinkInput> cb) {
-		JNIGetSinkInputInfoList(getPointer(), mainloop.getPointer(), cb);		
+		JNIGetSinkInputInfoList(mainloop.getPointer(), cb);		
 	}
 	// Sink Input Actions
 	public void setSinkInputMute(int idx, boolean mute, SuccessCallback cb) {
@@ -102,10 +111,31 @@ public class PulseContext extends JNIObject {
 			.statusChanged(status);
 	}
 	
+	public void holdCallback(JniCallback cb) {
+		mCallbacks.add(cb);
+	}
+	public void unholdCallback(JniCallback cb) {
+		mCallbacks.remove(cb);
+	}
+	
 	private static final native long JNICreate(long pMainloop);
 	
+	/*
+	 * Closes the Context, and frees all unneeded C objects.
+	 */
+	public void close() {
+		setStateCallback(null);
+		subscribeSinkInput(null);
+		
+		// Free all possible remaining callbacks
+		for (JniCallback callback : mCallbacks) {
+			callback.freeGlobal();
+		}
+		
+		disconnect();
+	}
 	
-	public final native void disconnect();
+	protected final native void disconnect();
 	
 	public final native void setStateCallback(NotifyCallback cb);
 	
@@ -120,7 +150,7 @@ public class PulseContext extends JNIObject {
 	
 	// Sink Input
 	private static final native void JNIGetSinkInputInfo(long pContext, long pMainloop, int idx, InfoCallback cb);
-	private static final native void JNIGetSinkInputInfoList(long pContext, long pMainloop, InfoCallback cb);
+	private final native void JNIGetSinkInputInfoList(long pMainloop, InfoCallback cb);
 	private static final native void JNISetSinkInputMuteByIndex(long pContext, long pMainloop, int idx, boolean mute);
 	private static synchronized final native void JNISetSinkInputVolumeByIndex(long pContext, long pMainloop, int idx, int[] volumes, SuccessCallback cb);
 	
