@@ -34,6 +34,33 @@ typedef struct jni_pa_event_cbs {
 	jobject sink_cbo;
 } jni_pa_event_cbs_t;
 
+typedef pa_operation *(*pa_context_get_info_t)(
+		pa_context *c, uint32_t idx, void (*cb), void *userdata);
+typedef pa_operation *(*pa_context_get_info_list_t)(
+		pa_context *c, void (*cb), void *userdata);
+typedef pa_operation *(*pa_context_set_mute_t)(
+		pa_context *c, uint32_t idx, int mute, void (*cb), void *userdata);
+typedef pa_operation *(*pa_context_set_volume_t)(
+		pa_context *c, uint32_t idx, pa_cvolume *vol, void (*cb), void *userdata);
+
+void context_synchronized_info_call(
+		JNIEnv *jenv, jobject jcontext, jobject jcb,
+		pa_context_get_info_t get_info, uint32_t idx,
+		void (*cb));
+void context_synchronized_info_list_call(
+		JNIEnv *jenv, jobject jcontext, jobject jcb,
+		pa_context_get_info_list_t get_info_list,
+		void (*cb));
+
+void context_synchronized_mute_call(
+		JNIEnv *jenv, jobject jcontext, jobject jcb,
+		pa_context_set_mute_t set_volume, char mute,
+		void (*cb));
+void context_synchronized_volume_call(
+		JNIEnv *jenv, jobject jcontext, jobject jcb,
+		pa_context_set_volume_t set_volume, jobject jvolume,
+		void (*cb));
+
 jni_pa_cb_info_t *new_cbinfo(JNIEnv *jenv, jobject jcontext, jobject jcb,
 		pa_threaded_mainloop *m, void *to_free);
 

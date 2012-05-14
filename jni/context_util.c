@@ -53,6 +53,54 @@ pa_threaded_mainloop *get_mainloop_ptr(JNIEnv *jenv, jobject jcontext) {
 	return (*jenv)->CallLongMethod(jenv, jcontext, mid);
 }
 
+void context_synchronized_info_call(
+		JNIEnv *jenv, jobject jcontext, jobject jcb,
+		pa_context_get_info_t get_info, uint32_t idx,
+		void (*cb)) {
+	LOGD("NATIVE: sync_info_call - start");
+	pa_context *c = get_context_ptr(jenv, jcontext);
+	assert(c);
+	pa_threaded_mainloop *m = get_mainloop_ptr(jenv, jcontext);
+	assert(m);
+
+	pa_threaded_mainloop_lock(m);
+
+	pa_operation *o;
+	LOGD("NATIVE: sync_info_call - pointers ready");
+
+	jni_pa_cb_info_t *cbinfo = new_cbinfo(jenv, jcontext, jcb, m, NULL);
+
+	o = get_info(c, idx, cb, cbinfo);
+	assert(o);
+
+	pa_operation_unref(o);
+	pa_threaded_mainloop_unlock(m);
+}
+
+void context_synchronized_info_list_call(
+		JNIEnv *jenv, jobject jcontext, jobject jcb,
+		pa_context_get_info_list_t get_info_list,
+		void (*cb)) {
+	LOGD("NATIVE: sync_info_call - start");
+	pa_context *c = get_context_ptr(jenv, jcontext);
+	assert(c);
+	pa_threaded_mainloop *m = get_mainloop_ptr(jenv, jcontext);
+	assert(m);
+
+	pa_threaded_mainloop_lock(m);
+
+	pa_operation *o;
+	LOGD("NATIVE: sync_info_call - pointers ready");
+
+	jni_pa_cb_info_t *cbinfo = new_cbinfo(jenv, jcontext, jcb, m, NULL);
+
+	o = get_info_list(c, cb, cbinfo);
+	assert(o);
+
+	pa_operation_unref(o);
+	pa_threaded_mainloop_unlock(m);
+}
+
 
 /*
  * Get a new global reference, saving knowledge of it in the context (for freeing)

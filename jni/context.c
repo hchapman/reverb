@@ -89,71 +89,30 @@ Java_com_harrcharr_reverb_pulse_PulseContext_setStateCallback(
 
 JNIEXPORT void JNICALL
 Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetSinkInfoByIndex(
-		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr, jint idx,
-		jobject runnable) {
-	pa_context *c = (pa_context *)c_ptr;
-	pa_threaded_mainloop *m = (pa_threaded_mainloop *)m_ptr;
-	pa_threaded_mainloop_lock(m);
-
-	pa_operation *o;
-	dlog(0, "About to get sink info %d", m);
-
-	jni_pa_cb_info_t *cbinfo = (jni_pa_cb_info_t*)malloc(sizeof(jni_pa_cb_info_t));
-	cbinfo->cb_runnable = (*jenv)->NewGlobalRef(jenv, runnable);
-	cbinfo->m = m;
-	cbinfo->to_free = NULL;
-	o = pa_context_get_sink_info_by_index(c, (int)idx, sink_info_cb, cbinfo);
-	assert(o);
-	dlog(0, "Sink info call is a go!");
-//	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-//		dlog(0, "Waiting for the mainloop in sink info!");
-//		pa_threaded_mainloop_wait(m);
-//	}
-	dlog(0, "Mainloop is done waiting Oh it was this");
-	pa_operation_unref(o);
-	pa_threaded_mainloop_unlock(m);
+		JNIEnv *jenv, jobject jcontext, jint idx, jobject runnable) {
+	context_synchronized_info_call(
+			jenv, jcontext, runnable,
+			&pa_context_get_sink_info_by_index, (uint32_t)idx,
+			sink_info_cb);
 }
 
 JNIEXPORT void JNICALL
-Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetSinkInputInfoList(
-		JNIEnv *jenv, jobject jcontext, jlong m_ptr, jobject runnable) {
-	LOGD("NATIVE: GetSinkInputInfoList - start");
-	pa_context *c = get_context_ptr(jenv, jcontext);
-	pa_threaded_mainloop *m = get_mainloop_ptr(jenv, jcontext);
-	LOGD("c %d m %d", c, m);
-	pa_threaded_mainloop_lock(m);
-
-	pa_operation *o;
-	LOGD("NATIVE: GetSinkInputInfoList - pointers ready");
-
-	jni_pa_cb_info_t *cbinfo = new_cbinfo(jenv, jcontext, runnable, m, NULL);
-
-	o = pa_context_get_sink_input_info_list(c, sink_input_info_cb, cbinfo);
-	assert(o);
-
-	pa_operation_unref(o);
-	pa_threaded_mainloop_unlock(m);
+Java_com_harrcharr_reverb_pulse_PulseContext_getSinkInputInfoList(
+		JNIEnv *jenv, jobject jcontext, jobject runnable) {
+	context_synchronized_info_list_call(
+			jenv, jcontext, runnable,
+			&pa_context_get_sink_input_info_list,
+			sink_input_info_cb);
 }
 
 JNIEXPORT void JNICALL
-Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetSinkInputInfo(
-		JNIEnv *jenv, jobject jcontext, jlong m_ptr, jint idx,
+Java_com_harrcharr_reverb_pulse_PulseContext_getSinkInputInfo(
+		JNIEnv *jenv, jobject jcontext, jint idx,
 		jobject runnable) {
-	pa_context *c = get_context_ptr(jenv, jcontext);
-	pa_threaded_mainloop *m = get_mainloop_ptr(jenv, jcontext);
-	pa_threaded_mainloop_lock(m);
-
-	pa_operation *o;
-	dlog(0, "About to get sink input info %d", m);
-
-	jni_pa_cb_info_t *cbinfo = new_cbinfo(jenv, jcontext, runnable, m, NULL);
-	o = pa_context_get_sink_input_info(c, (int)idx, sink_input_info_cb, cbinfo);
-	assert(o);
-	dlog(0, "Sink input info call is a go!");
-
-	dlog(0, "Mainloop is done waiting 222222");
-	pa_operation_unref(o);
-	pa_threaded_mainloop_unlock(m);
+	context_synchronized_info_call(
+			jenv, jcontext, runnable,
+			&pa_context_get_sink_input_info, (uint32_t)idx,
+			sink_input_info_cb);
 }
 
 
@@ -221,54 +180,21 @@ Java_com_harrcharr_reverb_pulse_PulseContext_JNISetSinkInputVolumeByIndex(
 
 JNIEXPORT void JNICALL
 Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetClientInfo(
-		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr, jint idx,
+		JNIEnv *jenv, jobject jcontext, jint idx,
 		jobject runnable) {
-	pa_context *c = (pa_context *)c_ptr;
-	pa_threaded_mainloop *m = (pa_threaded_mainloop *)m_ptr;
-	pa_threaded_mainloop_lock(m);
-
-	pa_operation *o;
-	dlog(0, "About to get sink info %d", m);
-
-	jni_pa_cb_info_t *cbinfo = (jni_pa_cb_info_t*)malloc(sizeof(jni_pa_cb_info_t));
-	cbinfo->cb_runnable = (*jenv)->NewGlobalRef(jenv, runnable);
-	cbinfo->m = m;
-	o = pa_context_get_client_info(c, (int)idx, client_info_cb, cbinfo);
-	assert(o);
-	dlog(0, "Sink info call is a go!");
-//	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-//		dlog(0, "Waiting for the mainloop in sink info!");
-//		pa_threaded_mainloop_wait(m);
-//	}
-	dlog(0, "Mainloop is done waiting");
-	pa_operation_unref(o);
-	pa_threaded_mainloop_unlock(m);
+	context_synchronized_info_call(
+			jenv, jcontext, runnable,
+			&pa_context_get_client_info, (uint32_t)idx,
+			client_info_cb);
 }
 
 JNIEXPORT void JNICALL
 Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetClientInfoList(
-		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr,
-		jobject runnable) {
-	pa_context *c = (pa_context *)c_ptr;
-	pa_threaded_mainloop *m = (pa_threaded_mainloop *)m_ptr;
-	pa_threaded_mainloop_lock(m);
-
-	pa_operation *o;
-	dlog(0, "About to get sink info %d", m);
-
-	jni_pa_cb_info_t *cbinfo = (jni_pa_cb_info_t*)malloc(sizeof(jni_pa_cb_info_t));
-	cbinfo->cb_runnable = (*jenv)->NewGlobalRef(jenv, runnable);
-	cbinfo->m = m;
-	o = pa_context_get_client_info_list(c, client_info_cb, cbinfo);
-	assert(o);
-	dlog(0, "Sink info call is a go!");
-//	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-//		dlog(0, "Waiting for the mainloop in sink info!");
-//		pa_threaded_mainloop_wait(m);
-//	}
-	dlog(0, "Mainloop is done waiting");
-	pa_operation_unref(o);
-	pa_threaded_mainloop_unlock(m);
+		JNIEnv *jenv, jobject jcontext, jobject runnable) {
+	context_synchronized_info_list_call(
+			jenv, jcontext, runnable,
+			&pa_context_get_client_info_list,
+			client_info_cb);
 }
 
 JNIEXPORT void JNICALL

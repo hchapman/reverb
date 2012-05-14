@@ -21,6 +21,6 @@
  ******************************************************************************/
 package com.harrcharr.reverb.pulse;
 
-public interface NotifyCallback {
-	public void run();
+public abstract class NotifyCallback extends JniCallback {
+	public abstract void run();
 }

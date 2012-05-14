@@ -25,21 +25,59 @@ import java.nio.ByteBuffer;
 import java.util.TreeSet;
 
 public class PulseContext extends JNIObject {
+	public static enum ContextState {
+		UNCONNECTED,
+		CONNECTING,
+		AUTHORIZING,
+		SETTING_NAME,
+		READY,
+		FAILED,
+		TERMINATED;
+		
+		/*
+		 *  Takes a value from C named PA_CONTEXT_[statename], 
+		 *  returns Java equivalent. Take care to ensure consistency with
+		 *  build version of libpulse headers.
+		 */
+		public static ContextState fromInt (int cValue) {
+			switch(cValue) {
+			case 0: return UNCONNECTED;
+			case 1: return CONNECTING;
+			case 2: return AUTHORIZING;
+			case 3: return SETTING_NAME;
+			case 4: return READY;
+			case 5: return FAILED;
+			case 6: return TERMINATED;
+			}
+			
+			return null;
+		}
+	}
+	
 	protected Runnable cbStatusChanged;
 	protected Mainloop mainloop;
 	
+	protected Runnable onConnecting;
+	protected Runnable onAuthorizing;
+	protected Runnable onSettingName;
+	protected Runnable onReady;
+	protected Runnable onFailure;
+	protected Runnable onTerminate;
+	
 	protected TreeSet<JniCallback> mCallbacks;
 	
+	private boolean mSubscribed; 
 	protected long mSubCbPtr;
 	
 	protected ByteBuffer mCbPtrs;
 	
-	protected int nStatus;
+	protected ContextState mStatus;
 	
 	public PulseContext(Mainloop m) {
 		super(JNICreate(m.getPointer()));
 		mainloop = m;
-		nStatus = -1;
+		mStatus = ContextState.UNCONNECTED;
+		mSubscribed = false;
 		
 		mCallbacks = new TreeSet<JniCallback>();
 	}
@@ -51,55 +89,28 @@ public class PulseContext extends JNIObject {
 	public final native void connect(String server)
 		throws Exception;
 	
-	public void subscribe() {
+	protected void subscribe() {
+		if (mSubscribed)
+			return;
+		
 		mSubCbPtr = JNISubscribe(getPointer(), mainloop.getPointer());
+		mSubscribed = true;
 	}
+	private static final native long JNISubscribe(long pContext, long pMainloop);
+	
 	public void subscribeSinkInput(SubscriptionCallback cb) {
+		subscribe();
 		JNISubscribeSinkInput(getPointer(), mSubCbPtr, cb);
 	}
+	private static final native void JNISubscribeSinkInput(long pContext, long pCbs, SubscriptionCallback cb);
 	
-	// Sink Queries
-	public void getSinkInfo(int idx, InfoCallback<SinkInfo> cb) {
-		JNIGetSinkInfoByIndex(getPointer(), mainloop.getPointer(), idx, cb);		
-	}
-	// Sink Actions
-	public void setSinkMute(int idx, boolean mute) {
-		JNISetSinkMuteByIndex(getPointer(), mainloop.getPointer(), idx, mute);
-	}
 	
-	// Sink Input Queries
-	public void getSinkInputInfo(int idx, InfoCallback<SinkInput> cb) {
-		JNIGetSinkInputInfo(getPointer(), mainloop.getPointer(), idx, cb);		
-	}
-	public void getSinkInputInfoList(InfoCallback<SinkInput> cb) {
-		JNIGetSinkInputInfoList(mainloop.getPointer(), cb);		
-	}
-	// Sink Input Actions
-	public void setSinkInputMute(int idx, boolean mute, SuccessCallback cb) {
-		JNISetSinkInputMuteByIndex(getPointer(), mainloop.getPointer(), idx, mute);
-	}
 	public void setSinkInputVolume(int idx, Volume volume, SuccessCallback cb) {
-		JNISetSinkInputVolumeByIndex(getPointer(), mainloop.getPointer(), idx, volume.getVolumes(), cb);
-	}
-	
-	// Client Queries
-	public void getClientInfo(int idx, InfoCallback<ClientInfo> cb) {
-		JNIGetClientInfo(getPointer(), mainloop.getPointer(), idx, cb);		
-	}
-	public void getClientInfoList(InfoCallback<ClientInfo> cb) {
-		JNIGetClientInfoList(getPointer(), mainloop.getPointer(), cb);		
+		JNISetSinkInputVolumeByIndex(idx, volume.getVolumes(), cb);
 	}
 	
 	public boolean isReady() {
-		return nStatus == 4;
-	}
-	
-	protected void statusChanged(int status) {
-		nStatus = status;
-		if (cbStatusChanged != null) {
-			cbStatusChanged.run();
-		}
-		
+		return mStatus == ContextState.READY;
 	}
 	
 	public boolean isConnected() {
@@ -108,11 +119,6 @@ public class PulseContext extends JNIObject {
 	
 	protected void operationSuccess(int success) {
 
-	}
-	
-	public static void statusChanged(long pContext, int status) {
-		((PulseContext)JNIObject.getByPointer(pContext))
-			.statusChanged(status);
 	}
 	
 	public void holdCallback(JniCallback cb) {
@@ -128,7 +134,7 @@ public class PulseContext extends JNIObject {
 	 * Closes the Context, and frees all unneeded C objects.
 	 */
 	public void close() {
-		setStateCallback(null);
+		setConnectionReadyCallback(null);
 		subscribeSinkInput(null);
 		
 		// Free all possible remaining callbacks
@@ -141,24 +147,21 @@ public class PulseContext extends JNIObject {
 	
 	protected final native void disconnect();
 	
-	public final native void setStateCallback(NotifyCallback cb);
+	public final native void setConnectionReadyCallback(NotifyCallback cb);
 	
 	public final native int getStatus();
-	
-	private static final native long JNISubscribe(long pContext, long pMainloop);
-	private static final native void JNISubscribeSinkInput(long pContext, long pCbs, SubscriptionCallback cb);
-	
+
 	// Sink
-	private static final native void JNIGetSinkInfoByIndex(long pContext, long pMainloop, int idx, InfoCallback cb);
-	private static final native void JNISetSinkMuteByIndex(long pContext, long pMainloop, int idx, boolean mute);
+	public final native void getSinkInfoByIndex(int idx, InfoCallback<SinkInfo> cb);
+	public final native void setSinkMuteByIndex(int idx, boolean mute);
 	
 	// Sink Input
-	private static final native void JNIGetSinkInputInfo(long pContext, long pMainloop, int idx, InfoCallback cb);
-	private final native void JNIGetSinkInputInfoList(long pMainloop, InfoCallback cb);
-	private static final native void JNISetSinkInputMuteByIndex(long pContext, long pMainloop, int idx, boolean mute);
-	private static synchronized final native void JNISetSinkInputVolumeByIndex(long pContext, long pMainloop, int idx, int[] volumes, SuccessCallback cb);
+	public final native void getSinkInputInfo(int idx, InfoCallback<SinkInput> cb);
+	public final native void getSinkInputInfoList(InfoCallback<SinkInput> cb);
+	public final native void setSinkInputMute(int idx, boolean mute, SuccessCallback cb);
+	private synchronized final native void JNISetSinkInputVolumeByIndex(int idx, int[] volumes, SuccessCallback cb);
 	
 	// Client
-	private static final native void JNIGetClientInfo(long pContext, long pMainloop, int idx, InfoCallback cb);
-	private static final native void JNIGetClientInfoList(long pContext, long pMainloop, InfoCallback cb);
+	public final native void getClientInfo(int idx, InfoCallback<ClientInfo> cb);
+	public final native void getClientInfoList(InfoCallback<ClientInfo> cb);
 }

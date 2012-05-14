@@ -78,19 +78,13 @@ public class ReverbActivity extends Activity {
 		m = new Mainloop();
 		mPulse = new PulseContext(m);
 		
-		mPulse.setStateCallback(new NotifyCallback() {
+		mPulse.setConnectionReadyCallback(new NotifyCallback() {
 			@Override
 			public void run() {
-				Log.d("Reverb", "Context status is now "+mPulse.getStatus());
-				
-				if (mPulse.getStatus() == 4) {
-					mPulse.subscribe();
-					
-			    	siFrag.setPulseContext(mPulse);
+			    siFrag.setPulseContext(mPulse);
 			    	
-					mPulse.getSinkInputInfoList(siFrag.getInfoCallback());
-					//mPulse.subscribeSinkInput(siFrag.getSubscriptionCallback());
-				}
+				mPulse.getSinkInputInfoList(siFrag.getInfoCallback());
+				mPulse.subscribeSinkInput(siFrag.getSubscriptionCallback());
 			}
 		});
 
@@ -108,19 +102,13 @@ public class ReverbActivity extends Activity {
     		mPulse.close();
     		mPulse = new PulseContext(m);
     		
-    		mPulse.setStateCallback(new NotifyCallback() {
+    		mPulse.setConnectionReadyCallback(new NotifyCallback() {
     			@Override
-    			public void run() {
-    				Log.d("Reverb", "Context status is now "+mPulse.getStatus());
-    				
-    				if (mPulse.getStatus() == 4) {
-    					mPulse.subscribe();
-    					
-    			    	siFrag.setPulseContext(mPulse);
-    			    	
-    					mPulse.getSinkInputInfoList(siFrag.getInfoCallback());
-    					mPulse.subscribeSinkInput(siFrag.getSubscriptionCallback());
-    				}
+    			public void run() {				
+    		    	siFrag.setPulseContext(mPulse);
+    		    	
+    				mPulse.getSinkInputInfoList(siFrag.getInfoCallback());
+    				mPulse.subscribeSinkInput(siFrag.getSubscriptionCallback());
     			}
     		});
     	}
