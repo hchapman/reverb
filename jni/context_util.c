@@ -101,6 +101,61 @@ void context_synchronized_info_list_call(
 	pa_threaded_mainloop_unlock(m);
 }
 
+void context_synchronized_mute_call(
+		JNIEnv *jenv, jobject jcontext, jobject jcb,
+		pa_context_set_mute_t set_mute, uint32_t idx,
+		int mute, void (*cb)) {
+	LOGD("NATIVE: sync_mute_call - start");
+	pa_context *c = get_context_ptr(jenv, jcontext);
+	assert(c);
+	pa_threaded_mainloop *m = get_mainloop_ptr(jenv, jcontext);
+	assert(m);
+
+	pa_threaded_mainloop_lock(m);
+
+	pa_operation *o;
+	LOGD("NATIVE: sync_mute_call - pointers ready");
+
+	jni_pa_cb_info_t *cbinfo = new_cbinfo(jenv, jcontext, jcb, m, NULL);
+
+	o = set_mute(c, idx, mute, cb, cbinfo);
+	assert(o);
+
+	pa_operation_unref(o);
+	pa_threaded_mainloop_unlock(m);
+}
+
+void context_synchronized_volume_call(
+		JNIEnv *jenv, jobject jcontext, jobject jcb,
+		pa_context_set_volume_t set_volume, uint32_t idx,
+		jintArray volumes, void (*cb)) {
+	LOGD("NATIVE: sync_mute_call - start");
+	pa_context *c = get_context_ptr(jenv, jcontext);
+	assert(c);
+	pa_threaded_mainloop *m = get_mainloop_ptr(jenv, jcontext);
+	assert(m);
+
+	pa_threaded_mainloop_lock(m);
+
+	pa_cvolume *v = (pa_cvolume *)malloc(sizeof(pa_cvolume));
+	pa_cvolume_init(v);
+	pa_cvolume_set(v, 2, PA_VOLUME_NORM);
+
+	(*jenv)->GetIntArrayRegion(jenv, volumes, 0,
+			(*jenv)->GetArrayLength(jenv, volumes), &(v->values));
+
+	pa_operation *o;
+
+	LOGD("NATIVE: sync_mute_call - pointers ready");
+
+	jni_pa_cb_info_t *cbinfo = new_cbinfo(jenv, jcontext, jcb, m, v);
+
+	o = set_volume(c, idx, v, cb, cbinfo);
+	assert(o);
+
+	pa_operation_unref(o);
+	pa_threaded_mainloop_unlock(m);
+}
 
 /*
  * Get a new global reference, saving knowledge of it in the context (for freeing)
@@ -221,52 +276,7 @@ void context_state_cb(pa_context* c, void* userdata) {
 	detach_jnienv(status);
 }
 
-void sink_info_cb(pa_context* c, const pa_sink_info *i,
-		int eol, void *userdata) {
-	JNIEnv *env;
-	jclass cls;
-	jmethodID mid;
-	jenv_status_t status;
-
-	if ((status = get_jnienv(&env)) == JENV_UNSUCCESSFUL) {
-		return;
-	}
-
-	jni_pa_cb_info_t *cbdata = (jni_pa_cb_info_t*)userdata;
-
-    pa_threaded_mainloop *m = cbdata->m;
-    assert(m);
-
-	if (eol < 0) {
-		LOGE("Error returned from a sink info query");
-	    pa_threaded_mainloop_signal(m, 0);
-	    del_cb_globalref(env, cbdata->cb_runnable);
-	    free(cbdata);
-	    detach_jnienv(status);
-	    return;
-	}
-
-	if (eol > 0) {
-		pa_threaded_mainloop_signal(m, 0);
-		del_cb_globalref(env, cbdata->cb_runnable);
-	    free(cbdata);
-	    detach_jnienv(status);
-	    return;
-	}
-
-	if ((cls = (*env)->GetObjectClass(env, cbdata->cb_runnable))) {
-		if ((mid = (*env)->GetMethodID(env, cls, "run", "(IJ)V"))) {
-			// Run the actual Java callback method
-			(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid, (jint)i->index, (jlong)i);
-		}
-	}
-
-	detach_jnienv(status);
-	pa_threaded_mainloop_signal(m, 0);
-
-}
-
-void sink_input_info_cb(pa_context* c, const pa_sink_input_info *i,
+void info_cb(pa_context* c, const void *i,
 		int eol, void *userdata) {
 	JNIEnv *env;
 	jclass cls;
@@ -302,57 +312,11 @@ void sink_input_info_cb(pa_context* c, const pa_sink_input_info *i,
 	    return;
 	}
 
-	LOGD("C index %d", 	i->index);
 
 	if ((cls = (*env)->GetObjectClass(env, cbdata->cb_runnable))) {
-		if ((mid = (*env)->GetMethodID(env, cls, "run", "(IJ)V"))) {
+		if ((mid = (*env)->GetMethodID(env, cls, "run", "(J)V"))) {
 			// Run the actual Java callback method
-			(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid, (jint)(i->index), (jlong)i);
-		}
-	}
-
-	detach_jnienv(status);
-	pa_threaded_mainloop_signal(m, 0);
-
-}
-
-void client_info_cb(pa_context* c, const pa_sink_info *i,
-		int eol, void *userdata) {
-	JNIEnv *env;
-	jclass cls;
-	jmethodID mid;
-	jenv_status_t status;
-
-	if ((status = get_jnienv(&env)) == JENV_UNSUCCESSFUL) {
-		return;
-	}
-
-	jni_pa_cb_info_t *cbdata = (jni_pa_cb_info_t*)userdata;
-
-    pa_threaded_mainloop *m = cbdata->m;
-    assert(m);
-
-	if (eol < 0) {
-		LOGE("Error returned from a client info query");
-	    pa_threaded_mainloop_signal(m, 0);
-	    del_cb_globalref(env, cbdata->cb_runnable);
-	    free(cbdata);
-	    detach_jnienv(status);
-	    return;
-	}
-
-	if (eol > 0) {
-		pa_threaded_mainloop_signal(m, 0);
-		del_cb_globalref(env, cbdata->cb_runnable);
-	    free(cbdata);
-	    detach_jnienv(status);
-	    return;
-	}
-
-	if ((cls = (*env)->GetObjectClass(env, cbdata->cb_runnable))) {
-		if ((mid = (*env)->GetMethodID(env, cls, "run", "(IJ)V"))) {
-			// Run the actual Java callback method
-			(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid, (jint)i->index, (jlong)i);
+			(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid, (jlong)i);
 		}
 	}
 

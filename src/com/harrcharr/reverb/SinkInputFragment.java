@@ -33,6 +33,7 @@ import android.view.ViewGroup;
 import com.harrcharr.reverb.pulse.InfoCallback;
 import com.harrcharr.reverb.pulse.PulseContext;
 import com.harrcharr.reverb.pulse.SinkInput;
+import com.harrcharr.reverb.pulse.SinkInputInfoCallback;
 import com.harrcharr.reverb.pulse.SubscriptionCallback;
 
 public class SinkInputFragment extends Fragment {
@@ -105,9 +106,9 @@ public class SinkInputFragment extends Fragment {
 		return mSubscriptionCallback;
 	}
     
-	private class SinkInputCallback extends InfoCallback<SinkInput> {
-		public void run(int idx, long iPtr) {
-			final SinkInput si = new SinkInput(SinkInputFragment.this.getPulseContext(), iPtr);
+	private class SinkInputCallback extends SinkInputInfoCallback {
+		public void run(final SinkInput si) {
+			int idx = si.getIndex();
 			Log.d("Reverb [adapter]", "We're in a SinkInputCallback run().");
 			Log.d("Reverb", "Update index "+idx);
 			final StreamNodeView<SinkInput> v = SinkInputFragment.this.mNodes.get(si.getIndex());

@@ -22,6 +22,15 @@
 package com.harrcharr.reverb.pulse;
 
 public abstract class InfoCallback<T extends PulseNode> extends JniCallback {
-	//public void run_from_ptr(long iPtr);
-	public abstract void run(int idx, long iPtr);
+	protected PulseContext mPulse;
+	public InfoCallback () {
+		super();
+	}
+	public InfoCallback (PulseContext c) {
+		this();
+		mPulse = c;
+	}
+	
+	public abstract void run(long iPtr);
+	public abstract void run(final T node);
 }

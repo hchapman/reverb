@@ -54,11 +54,11 @@ void context_synchronized_info_list_call(
 
 void context_synchronized_mute_call(
 		JNIEnv *jenv, jobject jcontext, jobject jcb,
-		pa_context_set_mute_t set_volume, char mute,
+		pa_context_set_mute_t set_mute, uint32_t idx, int mute,
 		void (*cb));
 void context_synchronized_volume_call(
 		JNIEnv *jenv, jobject jcontext, jobject jcb,
-		pa_context_set_volume_t set_volume, jobject jvolume,
+		pa_context_set_volume_t set_volume, uint32_t idx, jintArray volumes,
 		void (*cb));
 
 jni_pa_cb_info_t *new_cbinfo(JNIEnv *jenv, jobject jcontext, jobject jcb,
@@ -76,11 +76,7 @@ void call_subscription_run(pa_subscription_event_type_t t, uint32_t idx, jobject
 void context_subscription_cb(pa_context* c, pa_subscription_event_type_t t,
 		uint32_t idx, void *userdata);
 void context_state_cb(pa_context* c, void* userdata);
-void sink_info_cb(pa_context* c, const pa_sink_info *i,
-		int eol, void *userdata);
-void sink_input_info_cb(pa_context* c, const pa_sink_input_info *i,
-		int eol, void *userdata);
-void client_info_cb(pa_context* c, const pa_sink_info *i,
+void info_cb(pa_context* c, const void *i,
 		int eol, void *userdata);
 void success_cb(pa_context* c, int success, void *userdata);
 

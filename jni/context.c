@@ -88,12 +88,12 @@ Java_com_harrcharr_reverb_pulse_PulseContext_setStateCallback(
 }
 
 JNIEXPORT void JNICALL
-Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetSinkInfoByIndex(
+Java_com_harrcharr_reverb_pulse_PulseContext_getSinkInfoByIndex(
 		JNIEnv *jenv, jobject jcontext, jint idx, jobject runnable) {
 	context_synchronized_info_call(
 			jenv, jcontext, runnable,
 			&pa_context_get_sink_info_by_index, (uint32_t)idx,
-			sink_info_cb);
+			info_cb);
 }
 
 JNIEXPORT void JNICALL
@@ -102,7 +102,7 @@ Java_com_harrcharr_reverb_pulse_PulseContext_getSinkInputInfoList(
 	context_synchronized_info_list_call(
 			jenv, jcontext, runnable,
 			&pa_context_get_sink_input_info_list,
-			sink_input_info_cb);
+			info_cb);
 }
 
 JNIEXPORT void JNICALL
@@ -112,80 +112,38 @@ Java_com_harrcharr_reverb_pulse_PulseContext_getSinkInputInfo(
 	context_synchronized_info_call(
 			jenv, jcontext, runnable,
 			&pa_context_get_sink_input_info, (uint32_t)idx,
-			sink_input_info_cb);
+			info_cb);
 }
 
 
 JNIEXPORT void JNICALL
-Java_com_harrcharr_reverb_pulse_PulseContext_JNISetSinkInputMuteByIndex(
-		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr, jint idx, jboolean mute,
+Java_com_harrcharr_reverb_pulse_PulseContext_setSinkInputMuteByIndex(
+		JNIEnv *jenv, jobject jcontext, jint idx, jboolean mute,
 		jobject runnable) {
-	pa_context *c = (pa_context *)c_ptr;
-	pa_threaded_mainloop *m = (pa_threaded_mainloop *)m_ptr;
-	pa_threaded_mainloop_lock(m);
-
-	pa_operation *o;
-	dlog(0, "About to get sink mute %d", m);
-	o = pa_context_set_sink_input_mute(c, (uint32_t)idx, (int)mute, NULL, m);
-	assert(o);
-	dlog(0, "Sink mute call is a go!");
-//	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-//		pa_threaded_mainloop_wait(m);
-//	}
-	dlog(0, "Mainloop is done waiting");
-	pa_operation_unref(o);
-	pa_threaded_mainloop_unlock(m);
+	context_synchronized_mute_call(
+			jenv, jcontext, runnable,
+			&pa_context_set_sink_input_mute, (uint32_t)idx,
+			(int) mute, success_cb);
 }
 
 JNIEXPORT void JNICALL
-Java_com_harrcharr_reverb_pulse_PulseContext_JNISetSinkInputVolumeByIndex(
-		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr, jint idx, jintArray volumes,
+Java_com_harrcharr_reverb_pulse_PulseContext_setSinkInputVolumeByIndex(
+		JNIEnv *jenv, jobject jcontext,
+		jint idx, jintArray volumes,
 		jobject runnable) {
-	pa_context *c = (pa_context *)c_ptr;
-	pa_threaded_mainloop *m = (pa_threaded_mainloop *)m_ptr;
-	pa_threaded_mainloop_lock(m);
-	pa_cvolume *v = (pa_cvolume *)malloc(sizeof(pa_cvolume));
-	pa_cvolume_init(v);
-	pa_cvolume_set(v, 2, PA_VOLUME_NORM);
-	char *s = malloc(sizeof(char[500]));
-	LOGD(pa_cvolume_snprint(s, 500, v));
-	LOGD("%d... %d", v->values, v->values[0]);
-	(*jenv)->GetIntArrayRegion(jenv, volumes, 0, (*jenv)->GetArrayLength(jenv, volumes), &(v->values));
-
-	pa_operation *o;
-	dlog(0, "About to set sink volume %d, len %d", v, (*jenv)->GetArrayLength(jenv, volumes));
-	LOGD("Volume is %d", pa_cvolume_valid(v));
-	LOGD(pa_cvolume_snprint(s, 500, v));
-	LOGD("%d... %d", v->values, v->values[0]);
-
-	jni_pa_cb_info_t *cbinfo = (jni_pa_cb_info_t*)malloc(sizeof(jni_pa_cb_info_t));
-	if (runnable != NULL) {
-		cbinfo->cb_runnable = (*jenv)->NewGlobalRef(jenv, runnable);
-	} else {
-		cbinfo->cb_runnable = NULL;
-	}
-	cbinfo->m = m;
-	cbinfo->to_free = v;
-	dlog(0, "Sink volume info is prepared! Want to free %d", cbinfo->to_free);
-	o = pa_context_set_sink_input_volume(c, (uint32_t)idx, v, success_cb, cbinfo);
-	assert(o);
-	dlog(0, "Sink mute call is a go!");
-//	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-//		pa_threaded_mainloop_wait(m);
-//	}
-	dlog(0, "Mainloop is done waiting");
-	pa_operation_unref(o);
-	pa_threaded_mainloop_unlock(m);
+	context_synchronized_volume_call(
+			jenv, jcontext, runnable,
+			&pa_context_set_sink_input_volume, (uint32_t)idx,
+			volumes, success_cb);
 }
 
 JNIEXPORT void JNICALL
 Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetClientInfo(
-		JNIEnv *jenv, jobject jcontext, jint idx,
-		jobject runnable) {
+		JNIEnv *jenv, jobject jcontext, jint idx, jobject runnable) {
 	context_synchronized_info_call(
 			jenv, jcontext, runnable,
 			&pa_context_get_client_info, (uint32_t)idx,
-			client_info_cb);
+			info_cb);
 }
 
 JNIEXPORT void JNICALL
@@ -194,7 +152,7 @@ Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetClientInfoList(
 	context_synchronized_info_list_call(
 			jenv, jcontext, runnable,
 			&pa_context_get_client_info_list,
-			client_info_cb);
+			info_cb);
 }
 
 JNIEXPORT void JNICALL
