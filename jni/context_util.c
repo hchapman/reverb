@@ -28,11 +28,38 @@ extern jclass jcls_context;
 jni_pa_cb_info_t *new_cbinfo(JNIEnv *jenv, jobject jcontext, jobject jcb,
 		pa_threaded_mainloop *m, void *to_free) {
 	jni_pa_cb_info_t *cbinfo = (jni_pa_cb_info_t*)malloc(sizeof(jni_pa_cb_info_t));
-	cbinfo->cb_runnable = get_cb_globalref(jenv, jcontext, jcb);
+	if (jcb != NULL) {
+		cbinfo->cb_runnable = get_cb_globalref(jenv, jcontext, jcb);
+	} else {
+		cbinfo->cb_runnable = NULL;
+	}
 	cbinfo->m = m;
 	cbinfo->to_free = to_free;
 
 	return cbinfo;
+}
+
+jni_pa_event_cbs_t *new_event_cbs() {
+	jni_pa_event_cbs_t *cbs = (jni_pa_event_cbs_t *)malloc(sizeof(jni_pa_event_cbs_t));
+	cbs->sink_input_cbo = NULL;
+	cbs->sink_cbo = NULL;
+	cbs->source_output_cbo = NULL;
+	cbs->source_cbo = NULL;
+
+	return cbs;
+}
+
+jni_pa_state_cbs_t *new_state_cbs() {
+	jni_pa_state_cbs_t *cbs = (jni_pa_state_cbs_t *)malloc(sizeof(jni_pa_state_cbs_t));
+	cbs->unconnected_cbo = NULL;
+	cbs->connecting_cbo = NULL;
+	cbs->authorizing_cbo = NULL;
+	cbs->setting_name_cbo = NULL;
+	cbs->ready_cbo = NULL;
+	cbs->failed_cbo = NULL;
+	cbs->terminated_cbo = NULL;
+
+	return cbs;
 }
 
 pa_context *get_context_ptr(JNIEnv *jenv, jobject jcontext) {
@@ -53,10 +80,64 @@ pa_threaded_mainloop *get_mainloop_ptr(JNIEnv *jenv, jobject jcontext) {
 	return (*jenv)->CallLongMethod(jenv, jcontext, mid);
 }
 
+jni_pa_event_cbs_t *get_event_cbs_ptr(JNIEnv *jenv, jobject jcontext) {
+	jmethodID mid = (*jenv)->GetMethodID(jenv, jcls_context, "getEventCbsPointer", "()J");
+	if (mid == NULL) {
+		LOGE("There was an error getting the event pointer method ID");
+		return NULL;
+	}
+
+	return (*jenv)->CallLongMethod(jenv, jcontext, mid);
+}
+
+jni_pa_state_cbs_t *get_state_cbs_ptr(JNIEnv *jenv, jobject jcontext) {
+	jmethodID mid = (*jenv)->GetMethodID(jenv, jcls_context, "getStateCbsPointer", "()J");
+	if (mid == NULL) {
+		LOGE("There was an error getting the state pointer method ID");
+		return NULL;
+	}
+
+	return (*jenv)->CallLongMethod(jenv, jcontext, mid);
+}
+
+void set_event_cbs_ptr(JNIEnv *jenv, jobject jcontext, jni_pa_event_cbs_t *cbs) {
+	jmethodID mid = (*jenv)->GetMethodID(jenv, jcls_context, "setEventCbsPointer", "(J)V");
+	if (mid == NULL) {
+		LOGE("There was an error getting the event cb pointer method ID");
+		return;
+	}
+
+	(*jenv)->CallVoidMethod(jenv, jcontext, mid, (jlong)cbs);
+}
+
+void set_state_cbs_ptr(JNIEnv *jenv, jobject jcontext, jni_pa_state_cbs_t *cbs) {
+	jmethodID mid = (*jenv)->GetMethodID(jenv, jcls_context, "setStateCbsPointer", "(J)V");
+	if (mid == NULL) {
+		LOGE("There was an error getting the state cb pointer method ID");
+		return;
+	}
+
+	(*jenv)->CallVoidMethod(jenv, jcontext, mid, (jlong)cbs);
+}
+
+void set_cb_context(JNIEnv *jenv, jobject jcb, jobject jcontext) {
+	jclass jcls = (*jenv)->GetObjectClass(jenv, jcb);
+	jmethodID mid = (*jenv)->GetMethodID(jenv, jcls,
+			"setContext", "(Lcom/harrcharr/reverb/pulse/PulseContext;)V");
+	if (mid == NULL) {
+		LOGE("There was an error getting the context set method ID");
+		return;
+	}
+
+	(*jenv)->CallVoidMethod(jenv, jcb, mid, jcontext);
+}
+
 void context_synchronized_info_call(
 		JNIEnv *jenv, jobject jcontext, jobject jcb,
 		pa_context_get_info_t get_info, uint32_t idx,
 		void (*cb)) {
+	set_cb_context(jenv, jcb, jcontext);
+
 	LOGD("NATIVE: sync_info_call - start");
 	pa_context *c = get_context_ptr(jenv, jcontext);
 	assert(c);
@@ -81,6 +162,8 @@ void context_synchronized_info_list_call(
 		JNIEnv *jenv, jobject jcontext, jobject jcb,
 		pa_context_get_info_list_t get_info_list,
 		void (*cb)) {
+	set_cb_context(jenv, jcb, jcontext);
+
 	LOGD("NATIVE: sync_info_call - start");
 	pa_context *c = get_context_ptr(jenv, jcontext);
 	assert(c);
@@ -232,8 +315,6 @@ void context_subscription_cb(pa_context* c, pa_subscription_event_type_t t,
         	break;
 
         case PA_SUBSCRIPTION_EVENT_SINK_INPUT:
-        	LOGD("Remove enum is %d", PA_SUBSCRIPTION_EVENT_REMOVE);
-
         	if (cbs->sink_input_cbo != NULL)
         		call_subscription_run(t & PA_SUBSCRIPTION_EVENT_TYPE_MASK,
         				idx, cbs->sink_input_cbo);
@@ -253,27 +334,66 @@ void context_subscription_cb(pa_context* c, pa_subscription_event_type_t t,
     }
 }
 
-void context_state_cb(pa_context* c, void* userdata) {
-
-	JNIEnv *env;
+void call_state_run(jobject runnable) {
+	JNIEnv *jenv;
 	jclass cls;
 	jmethodID mid;
 	jenv_status_t status;
 
-	if ((status = get_jnienv(&env)) == JENV_UNSUCCESSFUL) {
+	if ((status = get_jnienv(&jenv)) == JENV_UNSUCCESSFUL) {
 		return;
 	}
 
-	jni_pa_cb_info_t *cbdata = (jni_pa_cb_info_t*)userdata;
-
-	if ((cls = (*env)->GetObjectClass(env, cbdata->cb_runnable))) {
-		if ((mid = (*env)->GetMethodID(env, cls, "run", "()V"))) {
+	if ((cls = (*jenv)->GetObjectClass(jenv, runnable))) {
+		// For a SubscriptionCallback, our parameters are (int event, int idx)
+		if ((mid = (*jenv)->GetMethodID(jenv, cls, "run", "()V"))) {
 			// Run the actual Java callback method
-			(*env)->CallVoidMethod(env, cbdata->cb_runnable, mid);
+			(*jenv)->CallVoidMethod(jenv, runnable, mid);
 		}
 	}
 
 	detach_jnienv(status);
+}
+
+void context_state_cb(pa_context* c, void *userdata) {
+	jni_pa_state_cbs_t *cbs = (jni_pa_state_cbs_t *)userdata;
+
+    switch (pa_context_get_state(c)) {
+        case PA_CONTEXT_UNCONNECTED:
+        	if (cbs->unconnected_cbo != NULL)
+        		call_state_run(cbs->unconnected_cbo);
+            break;
+
+        case PA_CONTEXT_CONNECTING:
+        	if (cbs->connecting_cbo != NULL)
+        		call_state_run(cbs->connecting_cbo);
+        	break;
+
+        case PA_CONTEXT_AUTHORIZING:
+        	if (cbs->authorizing_cbo != NULL)
+        		call_state_run(cbs->authorizing_cbo);
+        	break;
+
+        case PA_CONTEXT_SETTING_NAME:
+        	if (cbs->setting_name_cbo != NULL)
+        		call_state_run(cbs->setting_name_cbo);
+            break;
+
+        case PA_CONTEXT_READY:
+        	if (cbs->ready_cbo != NULL)
+        		call_state_run(cbs->ready_cbo);
+            break;
+
+        case PA_CONTEXT_FAILED:
+        	if (cbs->failed_cbo != NULL)
+        		call_state_run(cbs->failed_cbo);
+            break;
+
+        case PA_CONTEXT_TERMINATED:
+        	if (cbs->terminated_cbo != NULL)
+        		call_state_run(cbs->terminated_cbo);
+            break;
+    }
 }
 
 void info_cb(pa_context* c, const void *i,

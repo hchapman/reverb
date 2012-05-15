@@ -21,7 +21,7 @@
  ******************************************************************************/
 package com.harrcharr.reverb.pulse;
 
-public interface SubscriptionCallback {
+public abstract class SubscriptionCallback extends JniCallback {
 	public final static int EVENT_REMOVE = 32;
-	public void run(int event, int index);
+	public abstract void run(int event, int index);
 }

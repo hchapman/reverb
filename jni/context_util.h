@@ -30,9 +30,21 @@
 
 // A structure holding (global) references to runnables, per event type
 typedef struct jni_pa_event_cbs {
+	jobject source_output_cbo;
 	jobject sink_input_cbo;
 	jobject sink_cbo;
+	jobject source_cbo;
 } jni_pa_event_cbs_t;
+
+typedef struct jni_pa_state_cbs {
+	jobject unconnected_cbo;
+	jobject connecting_cbo;
+	jobject authorizing_cbo;
+	jobject setting_name_cbo;
+	jobject ready_cbo;
+	jobject failed_cbo;
+	jobject terminated_cbo;
+} jni_pa_state_cbs_t;
 
 typedef pa_operation *(*pa_context_get_info_t)(
 		pa_context *c, uint32_t idx, void (*cb), void *userdata);
@@ -66,6 +78,12 @@ jni_pa_cb_info_t *new_cbinfo(JNIEnv *jenv, jobject jcontext, jobject jcb,
 
 pa_context *get_context_ptr(JNIEnv *jenv, jobject jcontext);
 pa_threaded_mainloop *get_mainloop_ptr(JNIEnv *jenv, jobject jcontext);
+
+jni_pa_event_cbs_t *get_event_cbs_ptr(JNIEnv *jenv, jobject jcontext);
+jni_pa_state_cbs_t *get_state_cbs_ptr(JNIEnv *jenv, jobject jcontext);
+
+void set_event_cbs_ptr(JNIEnv *jenv, jobject jcontext, jni_pa_event_cbs_t *cbs);
+void set_state_cbs_ptr(JNIEnv *jenv, jobject jcontext, jni_pa_state_cbs_t *cbs);
 
 // For dealing with callback global references
 jobject get_cb_globalref(JNIEnv *jenv, jobject c, jobject ref);

@@ -30,6 +30,9 @@ public abstract class InfoCallback<T extends PulseNode> extends JniCallback {
 		this();
 		mPulse = c;
 	}
+	public void setContext(PulseContext c) {
+		mPulse = c;
+	}
 	
 	public abstract void run(long iPtr);
 	public abstract void run(final T node);

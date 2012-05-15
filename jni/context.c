@@ -97,6 +97,15 @@ Java_com_harrcharr_reverb_pulse_PulseContext_getSinkInfoByIndex(
 }
 
 JNIEXPORT void JNICALL
+Java_com_harrcharr_reverb_pulse_PulseContext_setSinkMute(
+		JNIEnv *jenv, jobject jcontext, jint idx, jboolean mute, jobject runnable) {
+	context_synchronized_mute_call(
+			jenv, jcontext, runnable,
+			&pa_context_set_sink_mute_by_index, (uint32_t)idx,
+			(int) mute, success_cb);
+}
+
+JNIEXPORT void JNICALL
 Java_com_harrcharr_reverb_pulse_PulseContext_getSinkInputInfoList(
 		JNIEnv *jenv, jobject jcontext, jobject runnable) {
 	context_synchronized_info_list_call(
@@ -117,7 +126,7 @@ Java_com_harrcharr_reverb_pulse_PulseContext_getSinkInputInfo(
 
 
 JNIEXPORT void JNICALL
-Java_com_harrcharr_reverb_pulse_PulseContext_setSinkInputMuteByIndex(
+Java_com_harrcharr_reverb_pulse_PulseContext_setSinkInputMute(
 		JNIEnv *jenv, jobject jcontext, jint idx, jboolean mute,
 		jobject runnable) {
 	context_synchronized_mute_call(
@@ -127,7 +136,7 @@ Java_com_harrcharr_reverb_pulse_PulseContext_setSinkInputMuteByIndex(
 }
 
 JNIEXPORT void JNICALL
-Java_com_harrcharr_reverb_pulse_PulseContext_setSinkInputVolumeByIndex(
+Java_com_harrcharr_reverb_pulse_PulseContext_setSinkInputVolume(
 		JNIEnv *jenv, jobject jcontext,
 		jint idx, jintArray volumes,
 		jobject runnable) {
@@ -138,7 +147,7 @@ Java_com_harrcharr_reverb_pulse_PulseContext_setSinkInputVolumeByIndex(
 }
 
 JNIEXPORT void JNICALL
-Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetClientInfo(
+Java_com_harrcharr_reverb_pulse_PulseContext_getClientInfo(
 		JNIEnv *jenv, jobject jcontext, jint idx, jobject runnable) {
 	context_synchronized_info_call(
 			jenv, jcontext, runnable,
@@ -147,7 +156,7 @@ Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetClientInfo(
 }
 
 JNIEXPORT void JNICALL
-Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetClientInfoList(
+Java_com_harrcharr_reverb_pulse_PulseContext_getClientInfoList(
 		JNIEnv *jenv, jobject jcontext, jobject runnable) {
 	context_synchronized_info_list_call(
 			jenv, jcontext, runnable,
@@ -156,26 +165,45 @@ Java_com_harrcharr_reverb_pulse_PulseContext_JNIGetClientInfoList(
 }
 
 JNIEXPORT void JNICALL
-Java_com_harrcharr_reverb_pulse_PulseContext_JNISetSinkMuteByIndex(
-		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr, jint idx, jboolean mute) {
-	pa_context *c = (pa_context *)c_ptr;
-	pa_threaded_mainloop *m = (pa_threaded_mainloop *)m_ptr;
-	pa_threaded_mainloop_lock(m);
+Java_com_harrcharr_reverb_pulse_PulseContext_setConnectionReadyCallback(
+		JNIEnv *jenv, jobject jcontext, jobject runnable) {
+	pa_context *c = get_context_ptr(jenv, jcontext);
+	jni_pa_state_cbs_t *cbs = get_state_cbs_ptr(jenv, jcontext);
 
-	pa_operation *o;
-	dlog(0, "About to get sink mute %d", m);
-	o = pa_context_set_sink_mute_by_index(c, (uint32_t)idx, (int)mute, NULL, m);
-	assert(o);
-	dlog(0, "Sink mute call is a go!");
-//	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-//		pa_threaded_mainloop_wait(m);
-//	}
-	dlog(0, "Mainloop is done waiting");
-	pa_operation_unref(o);
-	pa_threaded_mainloop_unlock(m);
+	if (cbs == NULL && runnable != NULL) {
+		cbs = new_state_cbs();
+		set_state_cbs_ptr(jenv, jcontext, cbs);
+		pa_context_set_state_callback(c, context_state_cb, cbs);
+	}
+	if (cbs->ready_cbo != NULL) {
+		del_cb_globalref(jenv, cbs->ready_cbo);
+	}
+	if (runnable != NULL) {
+		cbs->ready_cbo = get_cb_globalref(jenv, jcontext, runnable);
+	}
 }
 
-JNIEXPORT jlong JNICALL
+JNIEXPORT void JNICALL
+Java_com_harrcharr_reverb_pulse_PulseContext_JNISubscribeSinkInput(
+		JNIEnv *jenv, jobject jcontext, jobject runnable) {
+	pa_context *c = get_context_ptr(jenv, jcontext);
+	jni_pa_event_cbs_t *cbs = get_event_cbs_ptr(jenv, jcontext);
+
+	if (cbs == NULL && runnable != NULL) {
+		cbs = new_event_cbs();
+		set_event_cbs_ptr(jenv, jcontext, cbs);
+		pa_context_set_subscribe_callback(c, context_subscription_cb, cbs);
+	}
+	if (cbs->sink_input_cbo != NULL) {
+		del_cb_globalref(jenv, cbs->sink_input_cbo);
+		cbs->sink_input_cbo = NULL;
+	}
+	if (runnable != NULL) {
+		cbs->sink_input_cbo = get_cb_globalref(jenv, jcontext, runnable);
+	}
+}
+
+JNIEXPORT void JNICALL
 Java_com_harrcharr_reverb_pulse_PulseContext_JNISubscribe(
 		JNIEnv *jenv, jclass jcls, jlong c_ptr, jlong m_ptr) {
 	pa_context *c = (pa_context *)c_ptr;
@@ -188,24 +216,4 @@ Java_com_harrcharr_reverb_pulse_PulseContext_JNISubscribe(
 
 	pa_operation_unref(o);
 	pa_threaded_mainloop_unlock(m);
-
-	jni_pa_event_cbs_t *cbs = (jni_pa_event_cbs_t *)malloc(sizeof(jni_pa_event_cbs_t));
-	cbs->sink_input_cbo = NULL;
-	pa_context_set_subscribe_callback(c, context_subscription_cb, cbs);
-
-	return (jlong)cbs;
-}
-
-JNIEXPORT void JNICALL
-Java_com_harrcharr_reverb_pulse_PulseContext_JNISubscribeSinkInput(
-		JNIEnv *jenv, jobject cobj, jlong cbo_ptr, jobject runnable) {
-	pa_context *c = (pa_context *)get_obj_ptr(jenv, cobj);
-	jni_pa_event_cbs_t *cbs = (jni_pa_event_cbs_t *)get_pointer_field(jenv, cobj, "mSubCbPtr");
-
-	if (cbs->sink_input_cbo != NULL) {
-		del_cb_globalref(jenv, runnable);
-	}
-	if (runnable != NULL) {
-		cbs->sink_input_cbo = get_cb_globalref(jenv, cobj, runnable);
-	}
 }

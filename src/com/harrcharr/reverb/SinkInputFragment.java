@@ -129,7 +129,7 @@ public class SinkInputFragment extends Fragment {
 		}
 	}
 	
-	private class SinkInputSubscriptionCallback implements SubscriptionCallback {
+	private class SinkInputSubscriptionCallback extends SubscriptionCallback {
 		public SinkInputSubscriptionCallback() {
 		}
 		

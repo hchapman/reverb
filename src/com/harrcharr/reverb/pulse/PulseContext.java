@@ -67,7 +67,9 @@ public class PulseContext extends JNIObject {
 	protected TreeSet<JniCallback> mCallbacks;
 	
 	private boolean mSubscribed; 
-	protected long mSubCbPtr;
+	
+	protected long mSubsCbsPointer;
+	protected long mStatesCbsPointer;
 	
 	protected ByteBuffer mCbPtrs;
 	
@@ -86,6 +88,11 @@ public class PulseContext extends JNIObject {
 		return mainloop.getPointer();
 	}
 	
+	public long getEventCbsPointer() { return mSubsCbsPointer; }
+	public long getStateCbsPointer() { return mStatesCbsPointer; }
+	public void setEventCbsPointer(long ptr) { mSubsCbsPointer = ptr; }
+	public void setStateCbsPointer(long ptr) { mStatesCbsPointer = ptr; }
+	
 	public final native void connect(String server)
 		throws Exception;
 	
@@ -93,20 +100,20 @@ public class PulseContext extends JNIObject {
 		if (mSubscribed)
 			return;
 		
-		mSubCbPtr = JNISubscribe(getPointer(), mainloop.getPointer());
+		mSubsCbsPointer = JNISubscribe(getPointer(), mainloop.getPointer());
 		mSubscribed = true;
 	}
 	private static final native long JNISubscribe(long pContext, long pMainloop);
 	
 	public void subscribeSinkInput(SubscriptionCallback cb) {
 		subscribe();
-		JNISubscribeSinkInput(getPointer(), mSubCbPtr, cb);
+		JNISubscribeSinkInput(cb);
 	}
-	private static final native void JNISubscribeSinkInput(long pContext, long pCbs, SubscriptionCallback cb);
+	private final native void JNISubscribeSinkInput(SubscriptionCallback cb);
 	
 	
 	public void setSinkInputVolume(int idx, Volume volume, SuccessCallback cb) {
-		JNISetSinkInputVolumeByIndex(idx, volume.getVolumes(), cb);
+		setSinkInputVolume(idx, volume.getVolumes(), cb);
 	}
 	
 	public boolean isReady() {
@@ -159,7 +166,7 @@ public class PulseContext extends JNIObject {
 	public final native void getSinkInputInfo(int idx, InfoCallback<SinkInput> cb);
 	public final native void getSinkInputInfoList(InfoCallback<SinkInput> cb);
 	public final native void setSinkInputMute(int idx, boolean mute, SuccessCallback cb);
-	private synchronized final native void JNISetSinkInputVolumeByIndex(int idx, int[] volumes, SuccessCallback cb);
+	private synchronized final native void setSinkInputVolume(int idx, int[] volumes, SuccessCallback cb);
 	
 	// Client
 	public final native void getClientInfo(int idx, InfoCallback<ClientInfo> cb);
