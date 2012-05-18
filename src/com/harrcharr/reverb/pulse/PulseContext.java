@@ -155,6 +155,7 @@ public class PulseContext extends JNIObject {
 	protected final native void disconnect();
 	
 	public final native void setConnectionReadyCallback(NotifyCallback cb);
+	public final native void setConnectionFailedCallback(NotifyCallback cb);
 	
 	public final native int getStatus();
 

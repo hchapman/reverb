@@ -184,6 +184,26 @@ Java_com_harrcharr_reverb_pulse_PulseContext_setConnectionReadyCallback(
 }
 
 JNIEXPORT void JNICALL
+Java_com_harrcharr_reverb_pulse_PulseContext_setConnectionFailedCallback(
+		JNIEnv *jenv, jobject jcontext, jobject runnable) {
+	pa_context *c = get_context_ptr(jenv, jcontext);
+	jni_pa_state_cbs_t *cbs = get_state_cbs_ptr(jenv, jcontext);
+
+	if (cbs == NULL && runnable != NULL) {
+		cbs = new_state_cbs();
+		set_state_cbs_ptr(jenv, jcontext, cbs);
+		pa_context_set_state_callback(c, context_state_cb, cbs);
+	}
+	if (cbs->failed_cbo != NULL) {
+		del_cb_globalref(jenv, cbs->failed_cbo);
+	}
+	if (runnable != NULL) {
+		cbs->failed_cbo = get_cb_globalref(jenv, jcontext, runnable);
+	}
+}
+
+
+JNIEXPORT void JNICALL
 Java_com_harrcharr_reverb_pulse_PulseContext_JNISubscribeSinkInput(
 		JNIEnv *jenv, jobject jcontext, jobject runnable) {
 	pa_context *c = get_context_ptr(jenv, jcontext);

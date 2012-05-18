@@ -23,20 +23,20 @@ package com.harrcharr.reverb;
 
 import java.util.HashMap;
 
-import android.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.actionbarsherlock.app.SherlockFragment;
 import com.harrcharr.reverb.pulse.InfoCallback;
 import com.harrcharr.reverb.pulse.PulseContext;
 import com.harrcharr.reverb.pulse.SinkInput;
 import com.harrcharr.reverb.pulse.SinkInputInfoCallback;
 import com.harrcharr.reverb.pulse.SubscriptionCallback;
 
-public class SinkInputFragment extends Fragment {
+public class SinkInputFragment extends SherlockFragment {
 	protected HashMap<Integer, StreamNodeView<SinkInput>> mNodes;
 	protected PulseContext mPulse;
 	
