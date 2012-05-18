@@ -18,13 +18,21 @@ public abstract class JniCallback implements Comparable<JniCallback> {
 	}
 	
 	public void unstoreGlobal() {
-		mPulse.unholdCallback(this);
+		unstoreGlobal(true);
+	}
+	public void unstoreGlobal(boolean unhold) {
+		if (unhold) {
+			mPulse.unholdCallback(this);
+		}
 		mReferenced = false;
 	}
 	
 	public void freeGlobal() {
+		freeGlobal(true);
+	}
+	public void freeGlobal(boolean unhold) {
 		if (mReferenced) {
-			unstoreGlobal();
+			unstoreGlobal(unhold);
 			JNIUtil.deleteGlobalRef(mGlobalRef);
 		}
 	}

@@ -22,6 +22,7 @@
 package com.harrcharr.reverb.pulse;
 
 import java.nio.ByteBuffer;
+import java.util.Set;
 import java.util.TreeSet;
 
 public class PulseContext extends JNIObject {
@@ -140,14 +141,17 @@ public class PulseContext extends JNIObject {
 	/*
 	 * Closes the Context, and frees all unneeded C objects.
 	 */
-	public void close() {
+	public synchronized void close() {
 		setConnectionReadyCallback(null);
 		subscribeSinkInput(null);
-		
+		Set<JniCallback> removalSet = new TreeSet<JniCallback>();
+
 		// Free all possible remaining callbacks
 		for (JniCallback callback : mCallbacks) {
-			callback.freeGlobal();
+			callback.freeGlobal(false);
+			removalSet.add(callback);
 		}
+		mCallbacks.removeAll(removalSet);
 		
 		disconnect();
 	}
