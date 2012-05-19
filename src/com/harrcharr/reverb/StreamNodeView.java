@@ -28,7 +28,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
-import com.harrcharr.reverb.pulse.StreamNode;
+import com.harrcharr.pulse.StreamNode;
 
 public class StreamNodeView<Node extends StreamNode> extends LinearLayout {
 	protected Node mNode;
@@ -69,7 +69,7 @@ public class StreamNodeView<Node extends StreamNode> extends LinearLayout {
 	}
 	
 	protected void reload() {
-    	mName.setText(mNode.getDescriptiveName());
+    	mName.setText(mNode.getDescriptiveName() + " " + mNode.getIndex());
         mVolumeControl.setNode(mNode);
 	}
 	

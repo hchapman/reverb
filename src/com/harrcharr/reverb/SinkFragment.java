@@ -3,28 +3,29 @@ package com.harrcharr.reverb;
 import android.util.Log;
 
 import com.harrcharr.pulse.InfoCallback;
+import com.harrcharr.pulse.SinkInfo;
+import com.harrcharr.pulse.SinkInfoCallback;
 import com.harrcharr.pulse.SinkInput;
-import com.harrcharr.pulse.SinkInputInfoCallback;
 import com.harrcharr.pulse.SubscriptionCallback;
 
-public class SinkInputFragment extends StreamNodeFragment<SinkInput> {
-	protected InfoCallback<SinkInput> mInfoCallback = 
-			new SinkInputCallback();
+public class SinkFragment extends StreamNodeFragment<SinkInfo> {
+	protected InfoCallback<SinkInfo> mInfoCallback = 
+			new SinkCallback();
 	protected SubscriptionCallback mSubscriptionCallback = 
 			new SinkInputSubscriptionCallback();
 	
-	public SinkInputFragment() {
+	public SinkFragment() {
 		super();
 	}
 	
-	private class SinkInputCallback extends SinkInputInfoCallback {
-		public void run(final SinkInput si) {
+	private class SinkCallback extends SinkInfoCallback {
+		public void run(final SinkInfo si) {
 			int idx = si.getIndex();
 			Log.d("Reverb [adapter]", "We're in a SinkInputCallback run().");
 			Log.d("Reverb", "Update index "+idx+"view group"+getViewGroup());
 			
 			if (getViewGroup() != null) {
-				final StreamNodeView<SinkInput> v = getStreamNodeViewByIndex(si.getIndex());	
+				final StreamNodeView<SinkInfo> v = getStreamNodeViewByIndex(si.getIndex());	
 				
 				Log.d("Reverb", "Update node is "+v+" and index "+idx);
 				if (v != null) {
@@ -40,7 +41,7 @@ public class SinkInputFragment extends StreamNodeFragment<SinkInput> {
 			}
 			
 			Log.d("Reverb", "put with idx "+idx);
-			SinkInputFragment.this.addNode(si);
+			SinkFragment.this.addNode(si);
 		}
 	}
 	
@@ -51,13 +52,13 @@ public class SinkInputFragment extends StreamNodeFragment<SinkInput> {
 				removeNode(index);
 			} else {
 				Log.w("Reverb", ""+getPulseContext());
-				getPulseContext().getSinkInputInfo(index, getInfoCallback());
+				getPulseContext().getSinkInfo(index, getInfoCallback());
 			}
 		}
 	}
 
 	@Override
-	protected InfoCallback<SinkInput> getInfoCallback() {
+	protected InfoCallback<SinkInfo> getInfoCallback() {
 		return mInfoCallback;
 	}
 
@@ -68,12 +69,12 @@ public class SinkInputFragment extends StreamNodeFragment<SinkInput> {
 
 	@Override
 	protected void loadStreamNodeList() {
-		getPulseContext().getSinkInputInfoList(getInfoCallback());
+		getPulseContext().getSinkInfoList(getInfoCallback());
 	}
 
 	@Override
 	protected void subscribeStreamNode() {
-		getPulseContext().subscribeSinkInput(getSubscriptionCallback());
+		getPulseContext().subscribeSink(getSubscriptionCallback());
 	}
 
 }

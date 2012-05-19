@@ -32,8 +32,8 @@ import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.harrcharr.reverb.pulse.StreamNode;
-import com.harrcharr.reverb.pulse.Volume;
+import com.harrcharr.pulse.StreamNode;
+import com.harrcharr.pulse.Volume;
 
 public class VolumeControl extends LinearLayout {
 	protected StreamNode mNode;

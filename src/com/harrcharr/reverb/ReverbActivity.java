@@ -36,15 +36,15 @@ import android.widget.Toast;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.ActionBar.Tab;
-import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
-import com.harrcharr.reverb.pulse.Mainloop;
-import com.harrcharr.reverb.pulse.NotifyCallback;
-import com.harrcharr.reverb.pulse.PulseContext;
-import com.harrcharr.reverb.pulse.SinkInput;
+import com.harrcharr.pulse.Mainloop;
+import com.harrcharr.pulse.NotifyCallback;
+import com.harrcharr.pulse.PulseContext;
+import com.harrcharr.pulse.SinkInput;
 
-public class ReverbActivity extends ActionBarTabsPager {
+public class ReverbActivity extends ActionBarTabsPager
+implements PulseInterface {
 	protected final String DEFAULT_SERVER = "192.168.1.104";
 	
 	protected Mainloop m;
@@ -55,7 +55,8 @@ public class ReverbActivity extends ActionBarTabsPager {
 	
 	protected ActionBar mActionBar;
 	
-	protected SinkInputFragment mSiFrag;
+	protected ArrayList<Runnable> mPulseListeners;
+	
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -65,14 +66,16 @@ public class ReverbActivity extends ActionBarTabsPager {
     	
     	mActionBar = getSupportActionBar();
     	
+    	mPulseListeners = new ArrayList<Runnable>();
+	
     	Tab sinkInputTab = mActionBar.newTab().setText("Sink Inputs");
+    	Tab sinkTab = mActionBar.newTab().setText("Sinks");
     	
     	mViewPager = (ViewPager)findViewById(R.id.pager);
     	
     	mTabsAdapter = new TabsAdapter(this, getSupportActionBar(), mViewPager);
-    	mTabsAdapter.addTab(sinkInputTab, SinkInputFragment.class);
-    	
-    	mSiFrag = (SinkInputFragment)mTabsAdapter.getItem(sinkInputTab.getPosition());
+    	mTabsAdapter.addTab(sinkInputTab, SinkInputFragment.class, null);
+    	mTabsAdapter.addTab(sinkTab, SinkFragment.class, null);
     	
     	mActionBar.setCustomView(R.layout.server_actionbar);
     	mActionBar.setDisplayShowTitleEnabled(false);
@@ -122,8 +125,9 @@ public class ReverbActivity extends ActionBarTabsPager {
     					Toast toast = Toast.makeText(context, text, duration);
     					toast.show();
     					
-    					mSiFrag.setPulseContext(mPulse);
-
+    					for (Runnable runnable : mPulseListeners) {
+    						runnable.run();
+    					}
     				}
     			});
     			
@@ -165,5 +169,12 @@ public class ReverbActivity extends ActionBarTabsPager {
     
     public PulseContext getPulseContext() {
     	return mPulse;
+    }
+    
+    public void registerPulseListener(Runnable runnable) {
+    	mPulseListeners.add(runnable);
+    }
+    public void unregisterPulseListener() {
+    	
     }
 }

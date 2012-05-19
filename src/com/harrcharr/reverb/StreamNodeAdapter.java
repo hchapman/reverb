@@ -34,10 +34,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 
-import com.harrcharr.reverb.pulse.InfoCallback;
-import com.harrcharr.reverb.pulse.PulseContext;
-import com.harrcharr.reverb.pulse.StreamNode;
-import com.harrcharr.reverb.pulse.SubscriptionCallback;
+import com.harrcharr.pulse.InfoCallback;
+import com.harrcharr.pulse.PulseContext;
+import com.harrcharr.pulse.StreamNode;
+import com.harrcharr.pulse.SubscriptionCallback;
 
 public abstract class StreamNodeAdapter<T extends StreamNode> extends BaseAdapter {
 	private Map<Integer, T> mNodes;

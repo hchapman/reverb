@@ -68,9 +68,17 @@ public class ActionBarTabsPager extends SherlockFragmentActivity {
         private final Context mContext;
         private final ActionBar mActionBar;
         private final ViewPager mViewPager;
-        private final ArrayList<String> mTabs = new ArrayList<String>();
-        private final TreeMap<String, Fragment> mFragments = 
-        		new TreeMap<String, Fragment>();
+        private final ArrayList<TabInfo> mTabs = new ArrayList<TabInfo>();
+        
+        static final class TabInfo {
+            private final Class<?> clss;
+            private final Bundle args;
+
+            TabInfo(Class<?> _class, Bundle _args) {
+                clss = _class;
+                args = _args;
+            }
+        }
 
         public TabsAdapter(FragmentActivity activity, ActionBar actionBar, ViewPager pager) {
             super(activity.getSupportFragmentManager());
@@ -81,9 +89,13 @@ public class ActionBarTabsPager extends SherlockFragmentActivity {
             mViewPager.setOnPageChangeListener(this);
         }
 
-        public void addTab(ActionBar.Tab tab, Class<?> clss) {
-            mTabs.add(clss.getName());
-            mActionBar.addTab(tab.setTabListener(this));
+        public void addTab(ActionBar.Tab tab, Class<?> clss, Bundle args) {
+        	TabInfo info = new TabInfo(clss, args);
+        	tab.setTag(info);
+        	tab.setTabListener(this);
+        	
+            mTabs.add(info);
+            mActionBar.addTab(tab);
             notifyDataSetChanged();
         }
 
@@ -94,11 +106,8 @@ public class ActionBarTabsPager extends SherlockFragmentActivity {
 
         @Override
         public Fragment getItem(int position) {
-        	if (mFragments.get(mTabs.get(position)) == null) {
-        		mFragments.put(mTabs.get(position), 
-        				Fragment.instantiate(mContext, mTabs.get(position), null));
-        	}
-        	return mFragments.get(mTabs.get(position));
+        	TabInfo info = mTabs.get(position);
+        	return Fragment.instantiate(mContext, info.clss.getName(), info.args);
         }
 
         @Override
@@ -116,7 +125,12 @@ public class ActionBarTabsPager extends SherlockFragmentActivity {
 
     	@Override
     	public void onTabSelected(Tab tab, FragmentTransaction ft) {
-    		mViewPager.setCurrentItem(tab.getPosition());
+            Object tag = tab.getTag();
+            for (int i=0; i<mTabs.size(); i++) {
+                if (mTabs.get(i) == tag) {
+                    mViewPager.setCurrentItem(i);
+                }
+            }
     	}
 
     	@Override
