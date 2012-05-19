@@ -13,6 +13,10 @@ public abstract class JniCallback implements Comparable<JniCallback> {
 		mPulse.holdCallback(this);
 	}
 	
+	public PulseContext getPulseContext() {
+		return mPulse;
+	}
+	
 	public long getGlobal() {
 		return mGlobalRef;
 	}

@@ -75,6 +75,7 @@ public class StreamNodeView<Node extends StreamNode> extends LinearLayout {
 	
 	public void setNode(Node node) {
 		mNode = node;
+		setId(node.getIndex());
 		reload();
 	}
 	

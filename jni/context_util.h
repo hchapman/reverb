@@ -79,6 +79,9 @@ jni_pa_cb_info_t *new_cbinfo(JNIEnv *jenv, jobject jcontext, jobject jcb,
 pa_context *get_context_ptr(JNIEnv *jenv, jobject jcontext);
 pa_threaded_mainloop *get_mainloop_ptr(JNIEnv *jenv, jobject jcontext);
 
+jni_pa_event_cbs_t *new_event_cbs();
+jni_pa_state_cbs_t *new_state_cbs();
+
 jni_pa_event_cbs_t *get_event_cbs_ptr(JNIEnv *jenv, jobject jcontext);
 jni_pa_state_cbs_t *get_state_cbs_ptr(JNIEnv *jenv, jobject jcontext);
 

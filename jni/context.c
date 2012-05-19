@@ -175,7 +175,7 @@ Java_com_harrcharr_reverb_pulse_PulseContext_setConnectionReadyCallback(
 		set_state_cbs_ptr(jenv, jcontext, cbs);
 		pa_context_set_state_callback(c, context_state_cb, cbs);
 	}
-	if (cbs->ready_cbo != NULL) {
+	if (cbs != NULL && cbs->ready_cbo != NULL) {
 		del_cb_globalref(jenv, cbs->ready_cbo);
 	}
 	if (runnable != NULL) {
@@ -194,7 +194,7 @@ Java_com_harrcharr_reverb_pulse_PulseContext_setConnectionFailedCallback(
 		set_state_cbs_ptr(jenv, jcontext, cbs);
 		pa_context_set_state_callback(c, context_state_cb, cbs);
 	}
-	if (cbs->failed_cbo != NULL) {
+	if (cbs != NULL && cbs->failed_cbo != NULL) {
 		del_cb_globalref(jenv, cbs->failed_cbo);
 	}
 	if (runnable != NULL) {
@@ -214,7 +214,7 @@ Java_com_harrcharr_reverb_pulse_PulseContext_JNISubscribeSinkInput(
 		set_event_cbs_ptr(jenv, jcontext, cbs);
 		pa_context_set_subscribe_callback(c, context_subscription_cb, cbs);
 	}
-	if (cbs->sink_input_cbo != NULL) {
+	if (cbs != NULL && cbs->sink_input_cbo != NULL) {
 		del_cb_globalref(jenv, cbs->sink_input_cbo);
 		cbs->sink_input_cbo = NULL;
 	}

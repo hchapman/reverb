@@ -147,6 +147,7 @@ public class PulseContext extends JNIObject {
 		Set<JniCallback> removalSet = new TreeSet<JniCallback>();
 
 		// Free all possible remaining callbacks
+		// Possibly re-implement this using iterators and .remove()
 		for (JniCallback callback : mCallbacks) {
 			callback.freeGlobal(false);
 			removalSet.add(callback);

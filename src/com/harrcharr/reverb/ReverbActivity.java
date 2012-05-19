@@ -25,6 +25,7 @@ import java.util.ArrayList;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -34,6 +35,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.ActionBar.Tab;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
@@ -42,7 +44,7 @@ import com.harrcharr.reverb.pulse.NotifyCallback;
 import com.harrcharr.reverb.pulse.PulseContext;
 import com.harrcharr.reverb.pulse.SinkInput;
 
-public class ReverbActivity extends SherlockFragmentActivity {
+public class ReverbActivity extends ActionBarTabsPager {
 	protected final String DEFAULT_SERVER = "192.168.1.104";
 	
 	protected Mainloop m;
@@ -52,6 +54,8 @@ public class ReverbActivity extends SherlockFragmentActivity {
 	protected ArrayList<SinkInput> sinkInputs;
 	
 	protected ActionBar mActionBar;
+	
+	protected SinkInputFragment mSiFrag;
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -61,10 +65,19 @@ public class ReverbActivity extends SherlockFragmentActivity {
     	
     	mActionBar = getSupportActionBar();
     	
+    	Tab sinkInputTab = mActionBar.newTab().setText("Sink Inputs");
+    	
+    	mViewPager = (ViewPager)findViewById(R.id.pager);
+    	
+    	mTabsAdapter = new TabsAdapter(this, getSupportActionBar(), mViewPager);
+    	mTabsAdapter.addTab(sinkInputTab, SinkInputFragment.class);
+    	
+    	mSiFrag = (SinkInputFragment)mTabsAdapter.getItem(sinkInputTab.getPosition());
+    	
     	mActionBar.setCustomView(R.layout.server_actionbar);
     	mActionBar.setDisplayShowTitleEnabled(false);
     	mActionBar.setDisplayShowCustomEnabled(true);
-    	mActionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
+    	mActionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
     	
     	((EditText)mActionBar.getCustomView()
     			.findViewById(R.id.serverUrl)).setText(DEFAULT_SERVER);
@@ -79,24 +92,19 @@ public class ReverbActivity extends SherlockFragmentActivity {
 				});
     	
     	sinkInputs = new ArrayList<SinkInput>();
-
-    	final SinkInputFragment siFrag = (SinkInputFragment)getSupportFragmentManager()
-				.findFragmentById(R.id.siFrag);
     	
 		m = new Mainloop();
-
+		
 		connect(DEFAULT_SERVER);
     }
     
     public synchronized void connect(final String server) {
-    	final SinkInputFragment siFrag = (SinkInputFragment)getSupportFragmentManager()
-				.findFragmentById(R.id.siFrag);
     
     	Log.d("Reverb", server);
     	
     	if(mPulse != null && mPulse.isConnected()) {
     		mPulse.close();
-    		mActionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
+
     	}
     	
     	mPulse = new PulseContext(m);
@@ -104,26 +112,24 @@ public class ReverbActivity extends SherlockFragmentActivity {
     	mPulse.setConnectionReadyCallback(new NotifyCallback() {
     		@Override
     		public void run() {
-    			
-    			siFrag.setPulseContext(mPulse);
-
-    			mPulse.getSinkInputInfoList(siFrag.getInfoCallback());
-    			mPulse.subscribeSinkInput(siFrag.getSubscriptionCallback());
-
     			final Context context = getApplicationContext();
     			final CharSequence text = "Successfully connected to "+server;
     			final int duration = Toast.LENGTH_SHORT;
 
     			runOnUiThread(new Runnable() {
     				public void run() {
-    					mActionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
+ 
     					Toast toast = Toast.makeText(context, text, duration);
     					toast.show();
+    					
+    					mSiFrag.setPulseContext(mPulse);
+
     				}
     			});
     			
     		}
     	});
+    	
     	mPulse.setConnectionFailedCallback(new NotifyCallback() {
     		@Override
     		public void run() {				
@@ -144,7 +150,6 @@ public class ReverbActivity extends SherlockFragmentActivity {
     	try {
 			mPulse.connect(server);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			Log.e("Reverb", "weird");
 			e.printStackTrace();
 		}
@@ -156,5 +161,9 @@ public class ReverbActivity extends SherlockFragmentActivity {
         MenuInflater inflater = getSupportMenuInflater();
         inflater.inflate(R.menu.main_menu, menu);
         return true;
+    }
+    
+    public PulseContext getPulseContext() {
+    	return mPulse;
     }
 }
