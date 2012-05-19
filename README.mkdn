@@ -1,0 +1,18 @@
+Reverb aims to be a fully functional remote control
+for remote Pulseaudio servers (hint: think pavucontrol, 
+on your phone!) using libpulse itself.
+
+Requirements
+========================
+* Jake Wharton's ActionBarSherlock libraries
+* libpulse-android (head of master)
+* Possibly android support libraries, v4
+
+Building
+=========================
+You should just be able to add an android project from existing source, with directory this directory.
+If this doesn't work, please contact me and we can work on fleshing out these build directions. Be sure that
+the necessary projects are mentioned as libraries in Eclipse's project properties.
+
+If you've built the project without Eclipse (i.e., using maven), and would like to provide build instructions,
+get in contact with me!
