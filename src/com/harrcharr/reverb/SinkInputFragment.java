@@ -46,7 +46,7 @@ public class SinkInputFragment extends StreamNodeFragment<SinkInput> {
 	
 	private class SinkInputSubscriptionCallback extends SubscriptionCallback {
 		public void run(int type, int index) {
-			Log.d("Reverb", type + " " + index);
+			Log.d("SinkInputSubscriptionCallback", type + ", index: " + index);
 			if (type == EVENT_REMOVE) {
 				removeNode(index);
 			} else {

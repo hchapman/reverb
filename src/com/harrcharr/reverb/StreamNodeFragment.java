@@ -57,8 +57,6 @@ public abstract class StreamNodeFragment<T extends StreamNode> extends SherlockF
     	Log.e("Reverb", "Context set, activity is "+getActivity()+"Added? "+isAdded());
     	Log.e("Reverb", getActivity()+" is our activity");
     	
-		mPulse.subscribeSinkInput(getSubscriptionCallback());
-		
 		subscribeStreamNode();
 		loadStreamNodeList();
    
@@ -79,7 +77,7 @@ public abstract class StreamNodeFragment<T extends StreamNode> extends SherlockF
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.sink_input_fragment, container, false);
+        View v = inflater.inflate(R.layout.stream_node_fragment, container, false);
         
         if (mNodes == null)
         	return v;

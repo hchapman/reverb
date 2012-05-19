@@ -12,7 +12,7 @@ public class SinkFragment extends StreamNodeFragment<SinkInfo> {
 	protected InfoCallback<SinkInfo> mInfoCallback = 
 			new SinkCallback();
 	protected SubscriptionCallback mSubscriptionCallback = 
-			new SinkInputSubscriptionCallback();
+			new SinkSubscriptionCallback();
 	
 	public SinkFragment() {
 		super();
@@ -21,7 +21,7 @@ public class SinkFragment extends StreamNodeFragment<SinkInfo> {
 	private class SinkCallback extends SinkInfoCallback {
 		public void run(final SinkInfo si) {
 			int idx = si.getIndex();
-			Log.d("Reverb [adapter]", "We're in a SinkInputCallback run().");
+			Log.d("Reverb [adapter]", "We're in a SinkCallback run().");
 			Log.d("Reverb", "Update index "+idx+"view group"+getViewGroup());
 			
 			if (getViewGroup() != null) {
@@ -45,9 +45,9 @@ public class SinkFragment extends StreamNodeFragment<SinkInfo> {
 		}
 	}
 	
-	private class SinkInputSubscriptionCallback extends SubscriptionCallback {
+	private class SinkSubscriptionCallback extends SubscriptionCallback {
 		public void run(int type, int index) {
-			Log.d("Reverb", type + " " + index);
+			Log.d("SinkSubscriptionCallback", type + "index: " + index);
 			if (type == EVENT_REMOVE) {
 				removeNode(index);
 			} else {

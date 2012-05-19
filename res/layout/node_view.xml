@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/RelativeLayout1"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical" >
@@ -8,20 +9,38 @@
         android:id="@+id/nodeName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
         android:text="Node name" />
 
     <com.harrcharr.reverb.VolumeControl
         android:id="@+id/nodeVolume"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/nodeName"
         android:orientation="vertical" >
-
     </com.harrcharr.reverb.VolumeControl>
 
     <ToggleButton
         android:id="@+id/nodeMute"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="ToggleButton" />
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/nodeVolume"
+        android:text="ToggleButton"
+        android:textOff="Mute"
+        android:textOn="Mute" />
 
-</LinearLayout>
+    <ToggleButton
+        android:id="@+id/lockChannels"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/nodeMute"
+        android:layout_alignBottom="@+id/nodeMute"
+        android:layout_toRightOf="@+id/nodeMute"
+        android:text="ToggleButton"
+        android:textOff="Lock"
+        android:textOn="Lock" />
+
+</RelativeLayout>
