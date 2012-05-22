@@ -26,37 +26,62 @@ import java.util.ArrayList;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
-import android.widget.LinearLayout;
+import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 
 import com.harrcharr.pulse.StreamNode;
 import com.harrcharr.pulse.Volume;
+import com.harrcharr.reverb.SynchronizedSeekBar.OnTouchEventListener;
 
-public class VolumeControl extends LinearLayout {
+public class VolumeControl extends RelativeLayout {
 	protected StreamNode mNode;
 	protected Volume mVolume; // The volume which this layout represents
 	protected ArrayList<VolumeSlider> mSliders;
 	
-	public boolean ignoreSet;
+	protected ToggleButton mMute, mLocked;	
+	protected ViewGroup mVolumeGroup;
+	
+	public boolean mTracking;
 	
 	public VolumeControl(Context context) {
 		super(context);
-		setOrientation(VERTICAL);
+		View.inflate(context, R.layout.volume_control, this);
+		cacheViews();
 	}
 	public VolumeControl(Context context, AttributeSet attr) {
 		super(context, attr);
-		setOrientation(VERTICAL);
+		View.inflate(context, R.layout.volume_control, this);
+		cacheViews();
 	}
 	public VolumeControl(Context context, AttributeSet attr, int arg) {
 		super(context, attr, arg);
-		setOrientation(VERTICAL);
+		View.inflate(context, R.layout.volume_control, this);
+		cacheViews();
 	}
 	public VolumeControl(Context context, Volume volume) {
 		this(context);
+		View.inflate(context, R.layout.volume_control, this);
+		cacheViews();
 		setVolume(volume);
+	}
+	
+	protected void cacheViews() {
+		mVolumeGroup = (ViewGroup) this.findViewById(R.id.volumeHolder);
+		
+        mMute = (ToggleButton) this.findViewById(R.id.nodeMute);
+        mLocked = (ToggleButton) this.findViewById(R.id.lockChannels);
+        
+    	mMute.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				mNode.setMute(((ToggleButton)v).isChecked(), null);
+			}
+		});
 	}
 	
 	public synchronized void setNode(StreamNode node) {
@@ -68,6 +93,8 @@ public class VolumeControl extends LinearLayout {
 	public synchronized void setVolume(Volume volume) {	
 		mVolume = volume; 
 		Log.d("Reverb", "Num channels "+volume.getNumChannels());
+		
+		// If we presently have no volume sliders in the widget
 		if (mSliders == null) {			
 			mSliders = new ArrayList<VolumeSlider>();
 			int i = 0;
@@ -75,54 +102,85 @@ public class VolumeControl extends LinearLayout {
 				VolumeSlider v = new VolumeSlider(getContext(), chVol, i); 
 				
 				mSliders.add(v);
-				this.addView(v);
+				mVolumeGroup.addView(v);
 				Log.d("Reverb", "Addin a volume");
 				i++;
 			}
+			
+		// If we have fewer sliders in the widget than we have channels in the new volume
 		} else if (volume.getNumChannels() > mSliders.size()) {
 			int oldMax = mSliders.size();
 			for (int i = oldMax; i < volume.getNumChannels(); i++) {
-				Log.d("Reverb", "case 1");
 				VolumeSlider v = new VolumeSlider(getContext(), volume.getVolumes()[i], i); 
 				
 				mSliders.add(v);
-				this.addView(v);
+				mVolumeGroup.addView(v);
 			}
 			for (int i = 0; i < oldMax; i++) {
-				Log.d("Reverb", "case 2");
-				mSliders.get(i).setVolume(volume.getVolumes()[i]);
+				if (shouldUpdateChannel(i))
+					mSliders.get(i).setVolume(volume.getVolumes()[i]);
 			}
+			
+		// If we have more sliders in the widget than channels in the new volume
 		} else if (volume.getNumChannels() < mSliders.size()) {
-			Log.d("Reverb", "case 3");
 			for (int i = mSliders.size()-1; i > volume.getNumChannels(); i--) {
-				this.removeView(mSliders.remove(i));
+				mVolumeGroup.removeView(mSliders.remove(i));
 			}
 			for (int i = 0; i < mSliders.size(); i++) {
-				mSliders.get(i).setVolume(volume.getVolumes()[i]);
+				if (shouldUpdateChannel(i))
+					mSliders.get(i).setVolume(volume.getVolumes()[i]);
 			}
+			
+		// We have the same number of sliders in the volume as in the widget.
+		// This is the most common case.
 		} else {
-			Log.d("Reverb", "case 4");
 			for (int i = 0; i < mSliders.size(); i++) {
-				mSliders.get(i).setVolume(volume.getVolumes()[i]);
+				if (shouldUpdateChannel(i))
+					mSliders.get(i).setVolume(volume.getVolumes()[i]);
 			}
 		}
 	}
 	
+	public boolean channelsLocked() {
+		return mLocked.isChecked();
+	}
+	
+	private boolean shouldUpdateChannel(int channel) {
+		return !(mSliders.get(channel).isTracking() || 
+				(channelsLocked() && mTracking));
+	}
+	
 	protected void volumeChanged(int channel, int volume) {
-		mVolume.changeVolume(channel, volume);
+		if (channelsLocked()) {
+			mVolume.setVolume(volume);
+			for (VolumeSlider slider : mSliders) {
+				if (!slider.isTracking())
+					slider.setVolume(volume);
+			}
+		} else {
+			mVolume.setVolume(channel, volume);
+		}
 		mNode.setVolume(mVolume, null);
 	}
 	
+	public void dispatchMotionEvent(int channel, MotionEvent event) {
+		if (channelsLocked()) {
+			for (VolumeSlider slider : mSliders) {
+				slider.dispatchMotionEvent(channel, event);
+			}
+		}
+	}
+
 	protected class VolumeSlider extends RelativeLayout
-	implements SeekBar.OnSeekBarChangeListener{
+	implements SeekBar.OnSeekBarChangeListener, OnTouchEventListener {
 		protected TextView mChannelName;
-		protected SeekBar mVolumeSlider;
+		protected SynchronizedSeekBar mVolumeSlider;
 		protected TextView mLinear;
 		protected TextView mDb;
 		
 		protected int mChannel;
 		
-		private boolean ignoreSet;
+		private boolean mTracking;
 		
 		public VolumeSlider(Context context, int volume, int channel) {
 			super(context);
@@ -130,17 +188,28 @@ public class VolumeControl extends LinearLayout {
 			
 			mChannel = channel;
 			
-			mVolumeSlider = (SeekBar)this.findViewById(R.id.volumeSlider);
+			mVolumeSlider = (SynchronizedSeekBar)this.findViewById(R.id.volumeSlider);
 			mVolumeSlider.setOnSeekBarChangeListener(this);
+			mVolumeSlider.setOnTouchEventListener(this);
 			
-			ignoreSet = false;
+			mLinear = (TextView)this.findViewById(R.id.linearValue);
+			mDb = (TextView)this.findViewById(R.id.dbValue);
+			
+			mTracking = false;
 			
 			setVolume(volume);
 			Log.d("Reverb", "Settin' volume");
 		}
 		
 		public void setVolume(int volume) {
-			mVolumeSlider.setProgress(volume);
+			setVolume(volume, true);
+		}
+		
+		public void setVolume(int volume, boolean updateSlider) {
+			if (updateSlider)
+				mVolumeSlider.setProgress(volume);
+			mLinear.setText(" (" + Volume.asPercent(volume, 1) + "%)");
+			mDb.setText(Volume.asDecibels(volume) + " dB");
 		}
 		
 		@Override
@@ -157,22 +226,37 @@ public class VolumeControl extends LinearLayout {
 						VolumeControl.this.volumeChanged(mChannel, progress);
 					}
 				}).run();				
+				setVolume(progress, false);
 			}
 		}
 
 		@Override
 		public void onStartTrackingTouch(SeekBar seekBar) {
-			// TODO Auto-generated method stub
-			Log.d("Reverb", "Starting touch tracking");
-			ignoreSet = true;
-			VolumeControl.this.ignoreSet = true;
+			mTracking = true;
+			VolumeControl.this.mTracking = true;
 		}
 
 		@Override
 		public void onStopTrackingTouch(SeekBar seekBar) {
-			// TODO Auto-generated method stub
-			Log.d("Reverb", "Stopping touch tracking");
-			ignoreSet = false;
+			mTracking = false;
+			VolumeControl.this.mTracking = false;
+		}
+		
+		public boolean isTracking() {
+			return mTracking;
+		}
+
+		public boolean onSeekTouchEvent(MotionEvent event) {
+			VolumeControl.this.dispatchMotionEvent(mChannel, event);
+			return true;
+		}
+
+		public boolean dispatchMotionEvent(int channel, MotionEvent event) {
+			if (mChannel != channel) {
+				return mVolumeSlider.sendTouchEvent(event);
+			}
+			
+			return false;
 		}
 	}
 }

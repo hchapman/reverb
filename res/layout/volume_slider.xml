@@ -28,7 +28,7 @@
         android:layout_toLeftOf="@+id/linearValue"
         android:text="\? dB" />
 
-    <SeekBar
+    <com.harrcharr.reverb.SynchronizedSeekBar
         android:id="@+id/volumeSlider"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

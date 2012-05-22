@@ -22,25 +22,4 @@
         android:orientation="vertical" >
     </com.harrcharr.reverb.VolumeControl>
 
-    <ToggleButton
-        android:id="@+id/nodeMute"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_below="@+id/nodeVolume"
-        android:text="ToggleButton"
-        android:textOff="Mute"
-        android:textOn="Mute" />
-
-    <ToggleButton
-        android:id="@+id/lockChannels"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBaseline="@+id/nodeMute"
-        android:layout_alignBottom="@+id/nodeMute"
-        android:layout_toRightOf="@+id/nodeMute"
-        android:text="ToggleButton"
-        android:textOff="Lock"
-        android:textOn="Lock" />
-
 </RelativeLayout>

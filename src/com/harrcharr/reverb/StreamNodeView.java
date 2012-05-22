@@ -24,18 +24,16 @@ package com.harrcharr.reverb;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.View;
-import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.ToggleButton;
 
 import com.harrcharr.pulse.StreamNode;
 
-public class StreamNodeView<Node extends StreamNode> extends LinearLayout {
+public class StreamNodeView<Node extends StreamNode> extends RelativeLayout {
 	protected Node mNode;
 	
 	protected TextView mName;
 	protected VolumeControl mVolumeControl;
-	protected ToggleButton mMute;
 	
 	public StreamNodeView(Context context) {
 		super(context);
@@ -58,14 +56,7 @@ public class StreamNodeView<Node extends StreamNode> extends LinearLayout {
 	protected void initInterface() {
 		mName = (TextView) this.findViewById(R.id.nodeName);
         mVolumeControl = (VolumeControl) this.findViewById(R.id.nodeVolume);
-        mMute = (ToggleButton) this.findViewById(R.id.nodeMute);
-        
-    	mMute.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				mNode.setMute(((ToggleButton)v).isChecked(), null);
-			}
-		});
+
 	}
 	
 	protected void reload() {
