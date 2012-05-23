@@ -3,23 +3,55 @@
     android:id="@+id/RelativeLayout1"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical" >
+    android:orientation="vertical"
+    android:paddingLeft="10dp"
+    android:paddingRight="10dp"
+    android:paddingBottom="5dp" >
 
     <TextView
         android:id="@+id/nodeName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true"
-        android:text="Node name" />
+        android:text="Node (descriptive) name"
+        android:textStyle="bold" />
 
-    <com.harrcharr.reverb.VolumeControl
-        android:id="@+id/nodeVolume"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/volumeHolder"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_below="@+id/nodeName"
         android:orientation="vertical" >
-    </com.harrcharr.reverb.VolumeControl>
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/streamMax"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/volumeHolder" />
+
+    <ToggleButton
+        android:id="@+id/lockChannels"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/streamMax"
+        android:checked="true"
+        android:text="Lock Channels"
+        android:textOff="Lock"
+        android:textOn="Lock" />
+
+    <ToggleButton
+        android:id="@+id/nodeMute"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/streamMax"
+        android:layout_toLeftOf="@+id/lockChannels"
+        android:text="Mute Stream"
+        android:textOff="Mute"
+        android:textOn="Mute" />
 
 </RelativeLayout>

@@ -68,14 +68,18 @@ implements PulseInterface {
     	
     	mPulseListeners = new ArrayList<Runnable>();
 	
-    	Tab sinkInputTab = mActionBar.newTab().setText("Sink Inputs");
-    	Tab sinkTab = mActionBar.newTab().setText("Sinks");
+    	Tab sinkInputTab = mActionBar.newTab().setText("Playback");
+    	Tab sourceOutputTab = mActionBar.newTab().setText("Recording");
+    	Tab sinkTab = mActionBar.newTab().setText("Outputs");
+    	Tab sourceTab = mActionBar.newTab().setText("Inputs");
     	
     	mViewPager = (ViewPager)findViewById(R.id.pager);
     	
     	mTabsAdapter = new TabsAdapter(this, getSupportActionBar(), mViewPager);
     	mTabsAdapter.addTab(sinkInputTab, SinkInputFragment.class, null);
+    	mTabsAdapter.addTab(sourceOutputTab, SourceOutputFragment.class, null);
     	mTabsAdapter.addTab(sinkTab, SinkFragment.class, null);
+    	mTabsAdapter.addTab(sourceTab, SinkFragment.class, null);
     	
     	mActionBar.setCustomView(R.layout.server_actionbar);
     	mActionBar.setDisplayShowTitleEnabled(false);

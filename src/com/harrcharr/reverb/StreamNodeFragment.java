@@ -85,13 +85,14 @@ public abstract class StreamNodeFragment<T extends StreamNode> extends SherlockF
         Iterator<Entry<Integer, T>> nodeIterator = 
         		mNodes.entrySet().iterator();
         
+        ViewGroup nodeHolder = (ViewGroup)v.findViewById(R.id.nodeHolder);
+        
         while (nodeIterator.hasNext()) {
-        	Log.e("Reverb", "We're adding something");
         	final StreamNodeView<T> nodeView = 
         			new StreamNodeView<T>(getActivity());
         	nodeView.setNode(nodeIterator.next().getValue());
         	
-        	getViewGroup().addView(nodeView);
+        	nodeHolder.addView(nodeView);
         }
         
         return v;
