@@ -21,8 +21,8 @@
  ******************************************************************************/
 package com.harrcharr.reverb;
 
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import android.app.Activity;
@@ -33,33 +33,100 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.actionbarsherlock.app.SherlockFragment;
-import com.harrcharr.pulse.InfoCallback;
-import com.harrcharr.pulse.PulseContext;
 import com.harrcharr.pulse.StreamNode;
-import com.harrcharr.pulse.SubscriptionCallback;
+import com.harrcharr.reverb.pulseutil.HasPulseManager;
+import com.harrcharr.reverb.pulseutil.PulseConnectionListener;
+import com.harrcharr.reverb.pulseutil.PulseManager;
+import com.harrcharr.reverb.widgets.StreamNodeView;
 
-public abstract class StreamNodeFragment<T extends StreamNode> extends SherlockFragment {
-	protected HashMap<Integer, T> mNodes;
-	protected PulseContext mPulse;
-	
+public abstract class StreamNodeFragment<T extends StreamNode> extends SherlockFragment
+implements PulseConnectionListener {
 	protected ViewGroup mNodeHolder;
+
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        View v = inflater.inflate(R.layout.stream_node_fragment, container, false);
+        mNodeHolder = (ViewGroup)v.findViewById(R.id.nodeHolder);
+        
+        PulseManager p = (getActivity() == null ? null : 
+        	((HasPulseManager)getActivity()).getPulseManager());
+        
+        if (p != null) {
+	        Iterator<Entry<Integer, T>> nodeIterator = 
+	        		getNodesFromManager(p).entrySet().iterator();
+
+	        while (nodeIterator.hasNext()) {
+	        	updateNode(nodeIterator.next().getValue());
+	        }
+        }
+        
+        return v;
+    }
+    
+    protected void updateNode(final T node) {
+    	Log.d("StreamNodeFragment", "Updating a node");
+    	if(getViewGroup() != null) {
+    		getActivity().runOnUiThread(new Runnable(){
+    			public void run() {
+    				StreamNodeView<T> v = getStreamNodeViewByIndex(node.getIndex());
+    				Log.d("StreamNodeFragment", "View is "+v);
+    				if (v == null) {
+    					v = makeNewStreamNodeView();
+    					getViewGroup().addView(v);
+    				}
+    				v.setNode(node);
+    			}
+    		});	
+    	}
+    }
+    protected void removeNode(final int index) {
+    	if(getViewGroup() != null) {
+	    	getActivity().runOnUiThread(new Runnable(){
+	    		public void run() {
+	    			getViewGroup().removeView(getStreamNodeViewByIndex(index));
+	    		}
+	    	});	
+    	}
+    }
+    
+    protected ViewGroup getViewGroup() {
+    	return mNodeHolder;
+    }
+    
+    protected StreamNodeView<T> getStreamNodeViewByIndex(int idx) {
+    	if (getViewGroup() == null)
+    		return null;
+    				
+    	return (StreamNodeView<T>)getViewGroup().findViewById(idx);
+    } 
 	
-    public StreamNodeFragment() {
-		super();
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
+		
+		try {
+			PulseManager p = ((HasPulseManager)activity).getPulseManager();
+			p.addOnPulseConnectionListener(this);
+			onManagerAttached(p);
+		} catch (ClassCastException e) {
+			Log.e("StreamNodeFragment", "Activity to which this fragment " +
+					"is attached must have a PulseManager");
+			throw(new Error("A stream node fragment must be attached to" +
+					"an activity with a pulsemanager."));
+		}
+	}
+	
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+	}
+	
+	public abstract void onManagerAttached(PulseManager p);
+	public abstract Map<Integer, T> getNodesFromManager(PulseManager p);
+	
+	protected StreamNodeView<T> makeNewStreamNodeView() {
+		return new StreamNodeView<T>(getActivity());
 	}
     
-    public synchronized void setPulseContext(PulseContext pulse) {
-    	mPulse = pulse;
-    	
-    	// Now that we've changed our PulseContext, we have to reinstantiate.
-    	mNodes = new HashMap<Integer, T>();
-    	
-    	Log.e("Reverb", "Context set, activity is "+getActivity()+"Added? "+isAdded());
-    	Log.e("Reverb", getActivity()+" is our activity");
-    	
-		subscribeStreamNode();
-		loadStreamNodeList();
-   
+	public void onPulseConnectionReady(PulseManager p) {
     	if (isVisible()) {
 	    	getActivity().runOnUiThread(new Runnable() {
 				public void run() {
@@ -73,100 +140,9 @@ public abstract class StreamNodeFragment<T extends StreamNode> extends SherlockF
 				}
 			});
     	}
-    }
-
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.stream_node_fragment, container, false);
-        
-        if (mNodes == null)
-        	return v;
-        
-        Iterator<Entry<Integer, T>> nodeIterator = 
-        		mNodes.entrySet().iterator();
-        
-        ViewGroup nodeHolder = (ViewGroup)v.findViewById(R.id.nodeHolder);
-        
-        while (nodeIterator.hasNext()) {
-        	final StreamNodeView<T> nodeView = 
-        			new StreamNodeView<T>(getActivity());
-        	nodeView.setNode(nodeIterator.next().getValue());
-        	
-        	nodeHolder.addView(nodeView);
-        }
-        
-        return v;
-    }
-    
-    protected void addNode(T node) {
-    	mNodes.put(new Integer(node.getIndex()), node);
-    	
-    	if(getViewGroup() != null) {
-    		final StreamNodeView<T> nodeView = 
-    				new StreamNodeView<T>(getActivity());
-    		nodeView.setNode(node);
-    	
-    		Log.e("Reverb", "We want to add a node");
-    		getActivity().runOnUiThread(new Runnable(){
-    			public void run() {
-    				getViewGroup().addView(nodeView);
-    			}
-    		});	
-    	}
-    }
-    protected void removeNode(int index) {
-    	final T node = mNodes.remove(index);
-    	if (node == null)
-    		return;
-    	
-    	if(getViewGroup() != null) {
-	    	getActivity().runOnUiThread(new Runnable(){
-	    		public void run() {
-	    			getViewGroup()
-	    				.removeView(getStreamNodeViewByIndex(node.getIndex()));
-	    		}
-	    	});	
-    	}
-    }
-    
-    protected abstract void loadStreamNodeList();
-    protected abstract void subscribeStreamNode();
-    
-    protected ViewGroup getViewGroup() {
-    	if (getView() == null)
-    		return null;
-    	
-    	return (ViewGroup)getView().findViewById(R.id.nodeHolder);
-    }
-    
-    protected StreamNodeView<T> getStreamNodeViewByIndex(int idx) {
-    	if (getViewGroup() == null)
-    		return null;
-    				
-    	return (StreamNodeView<T>)getViewGroup().findViewById(idx);
-    }
-    
-    protected PulseContext getPulseContext() {
-    	return mPulse;
-    }
-    
-	protected abstract InfoCallback<T> getInfoCallback();
-	protected abstract SubscriptionCallback getSubscriptionCallback();
-	
-	public void onAttach(Activity activity) {
-		super.onAttach(activity);
 		
-		final PulseInterface p = (PulseInterface)activity;
-		p.registerPulseListener(new Runnable(){
-			public void run() {
-				StreamNodeFragment.this.setPulseContext(p.getPulseContext());
-			}
-		});
 	}
-	
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+	public void onPulseConnectionFailed(PulseManager p) {
+		// Right now we do nothing on failed connect.
 	}
-    
-
 }

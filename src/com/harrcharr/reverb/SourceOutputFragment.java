@@ -1,79 +1,41 @@
 package com.harrcharr.reverb;
 
+import java.util.Map;
+
 import android.util.Log;
 
 import com.harrcharr.pulse.InfoCallback;
+import com.harrcharr.pulse.SinkInput;
 import com.harrcharr.pulse.SourceOutput;
 import com.harrcharr.pulse.SourceOutputInfoCallback;
 import com.harrcharr.pulse.SubscriptionCallback;
+import com.harrcharr.reverb.pulseutil.PulseManager;
+import com.harrcharr.reverb.pulseutil.SourceOutputEventListener;
+import com.harrcharr.reverb.widgets.StreamNodeView;
 
-public class SourceOutputFragment extends StreamNodeFragment<SourceOutput> {
-	protected InfoCallback<SourceOutput> mInfoCallback = 
-			new SourceOutputCallback();
-	protected SubscriptionCallback mSubscriptionCallback = 
-			new SourceOutputSubscriptionCallback();
-	
+public class SourceOutputFragment extends StreamNodeFragment<SourceOutput>
+implements SourceOutputEventListener{
 	public SourceOutputFragment() {
 		super();
 	}
 	
-	private class SourceOutputCallback extends SourceOutputInfoCallback {
-		public void run(final SourceOutput si) {
-			int idx = si.getIndex();
-			Log.d("Reverb [adapter]", "We're in a SourceOutputCallback run().");
-			Log.d("Reverb", "Update index "+idx+"view group"+getViewGroup());
-			
-			if (getViewGroup() != null) {
-				final StreamNodeView<SourceOutput> v = getStreamNodeViewByIndex(si.getIndex());	
-				
-				Log.d("Reverb", "Update node is "+v+" and index "+idx);
-				if (v != null) {
-					getActivity().runOnUiThread(new Runnable() {
-						public void run() {
-							v.setNode(si);
-						}
-					});
-					
-					Log.d("Reverb", "put with idx "+idx);
-					return;
-				}
-			}
-			
-			Log.d("Reverb", "put with idx "+idx);
-			SourceOutputFragment.this.addNode(si);
-		}
-	}
-	
-	private class SourceOutputSubscriptionCallback extends SubscriptionCallback {
-		public void run(int type, int index) {
-			Log.d("SourceOutputSubscriptionCallback", type + ", index: " + index);
-			if (type == EVENT_REMOVE) {
-				removeNode(index);
-			} else {
-				Log.w("Reverb", ""+getPulseContext());
-				getPulseContext().getSourceOutputInfo(index, getInfoCallback());
-			}
-		}
+	@Override
+	public void onSourceOutputUpdated(PulseManager p, SourceOutput node) {
+		updateNode(node);
 	}
 
 	@Override
-	protected InfoCallback<SourceOutput> getInfoCallback() {
-		return mInfoCallback;
+	public void onSourceOutputRemoved(PulseManager p, int index) {
+		removeNode(index);
 	}
 
 	@Override
-	protected SubscriptionCallback getSubscriptionCallback() {
-		return mSubscriptionCallback;
+	public Map<Integer, SourceOutput> getNodesFromManager(PulseManager p) {
+		return p.getSourceOutputs();
 	}
 
 	@Override
-	protected void loadStreamNodeList() {
-		getPulseContext().getSourceOutputInfoList(getInfoCallback());
+	public void onManagerAttached(PulseManager p) {
+		p.addOnSourceOutputEventListener(this);
 	}
-
-	@Override
-	protected void subscribeStreamNode() {
-		getPulseContext().subscribeSourceOutput(getSubscriptionCallback());
-	}
-
 }

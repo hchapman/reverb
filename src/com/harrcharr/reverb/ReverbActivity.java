@@ -38,36 +38,34 @@ import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.ActionBar.Tab;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
-import com.harrcharr.pulse.Mainloop;
-import com.harrcharr.pulse.NotifyCallback;
-import com.harrcharr.pulse.PulseContext;
 import com.harrcharr.pulse.SinkInput;
+import com.harrcharr.reverb.pulseutil.HasPulseManager;
+import com.harrcharr.reverb.pulseutil.PulseConnectionListener;
+import com.harrcharr.reverb.pulseutil.PulseManager;
 
 public class ReverbActivity extends ActionBarTabsPager
-implements PulseInterface {
+implements HasPulseManager, PulseConnectionListener {
 	protected final String DEFAULT_SERVER = "192.168.1.104";
 	
-	protected Mainloop m;
-	protected PulseContext mPulse;
+	private PulseManager mPulseManager;
 	
 	protected ListView mSinkInputView;
 	protected ArrayList<SinkInput> sinkInputs;
 	
 	protected ActionBar mActionBar;
-	
-	protected ArrayList<Runnable> mPulseListeners;
-	
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
     	setContentView(R.layout.main);
-    	System.out.println("poop");
-    	
+
+    	mPulseManager = new PulseManager();
+    	mPulseManager.addOnPulseConnectionListener(this);
+    	mPulseManager.connect(DEFAULT_SERVER);
+
     	mActionBar = getSupportActionBar();
-    	
-    	mPulseListeners = new ArrayList<Runnable>();
-	
+
     	Tab sinkInputTab = mActionBar.newTab().setText("Playback");
     	Tab sourceOutputTab = mActionBar.newTab().setText("Recording");
     	Tab sinkTab = mActionBar.newTab().setText("Outputs");
@@ -86,82 +84,18 @@ implements PulseInterface {
     	mActionBar.setDisplayShowCustomEnabled(true);
     	mActionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
     	
+    	
     	((EditText)mActionBar.getCustomView()
     			.findViewById(R.id.serverUrl)).setText(DEFAULT_SERVER);
     	((Button)mActionBar.getCustomView()
     			.findViewById(R.id.serverChange)).setOnClickListener(
     			new OnClickListener() {
 					public void onClick(View v) {
-						connect(((EditText)mActionBar.getCustomView()
+						mPulseManager.connect(((EditText)mActionBar.getCustomView()
 								.findViewById(R.id.serverUrl))
 								.getText().toString());
 					}
 				});
-    	
-    	sinkInputs = new ArrayList<SinkInput>();
-    	
-		m = new Mainloop();
-		
-		connect(DEFAULT_SERVER);
-    }
-    
-    public synchronized void connect(final String server) {
-    
-    	Log.d("Reverb", server);
-    	
-    	if(mPulse != null && mPulse.isConnected()) {
-    		mPulse.close();
-
-    	}
-    	
-    	mPulse = new PulseContext(m);
-
-    	mPulse.setConnectionReadyCallback(new NotifyCallback() {
-    		@Override
-    		public void run() {
-    			final Context context = getApplicationContext();
-    			final CharSequence text = "Successfully connected to "+server;
-    			final int duration = Toast.LENGTH_SHORT;
-
-    			runOnUiThread(new Runnable() {
-    				public void run() {
- 
-    					Toast toast = Toast.makeText(context, text, duration);
-    					toast.show();
-    					
-    					for (Runnable runnable : mPulseListeners) {
-    						runnable.run();
-    					}
-    				}
-    			});
-    			
-    		}
-    	});
-    	
-    	mPulse.setConnectionFailedCallback(new NotifyCallback() {
-    		@Override
-    		public void run() {				
-    			final Context context = getApplicationContext();
-    			final CharSequence text = "Failed to connect to "+server;
-    			final int duration = Toast.LENGTH_SHORT;
-
-    			runOnUiThread(new Runnable() {
-    				public void run() {
-    					final Toast toast = Toast.makeText(context, text, duration);
-    					toast.show();
-    				}
-    			});
-    			
-    		}
-    	});
-    	
-    	try {
-			mPulse.connect(server);
-		} catch (Exception e) {
-			Log.e("Reverb", "weird");
-			e.printStackTrace();
-		}
-		
     }
     
     @Override
@@ -171,14 +105,34 @@ implements PulseInterface {
         return true;
     }
     
-    public PulseContext getPulseContext() {
-    	return mPulse;
+    public PulseManager getPulseManager() {
+    	return mPulseManager;
     }
     
-    public void registerPulseListener(Runnable runnable) {
-    	mPulseListeners.add(runnable);
+    public void onPulseConnectionReady(PulseManager p) {
+    	Log.d("ReverbActivity", "PulseManager is Connected.");
+		final Context context = getApplicationContext();
+		final CharSequence text = "Successfully connected to "+p.getServerName();
+		final int duration = Toast.LENGTH_SHORT;
+
+		runOnUiThread(new Runnable() {
+			public void run() {
+				Toast toast = Toast.makeText(context, text, duration);
+				toast.show();
+			}
+		});
     }
-    public void unregisterPulseListener() {
-    	
+    
+    public void onPulseConnectionFailed(PulseManager p) {
+		final Context context = getApplicationContext();
+		final CharSequence text = "Failed to connect to "+p.getServerName();
+		final int duration = Toast.LENGTH_SHORT;
+
+		runOnUiThread(new Runnable() {
+			public void run() {
+				final Toast toast = Toast.makeText(context, text, duration);
+				toast.show();
+			}
+		});
     }
 }

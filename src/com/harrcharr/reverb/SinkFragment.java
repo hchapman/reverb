@@ -1,80 +1,43 @@
 package com.harrcharr.reverb;
 
+import java.util.Map;
+
 import android.util.Log;
 
-import com.harrcharr.pulse.InfoCallback;
 import com.harrcharr.pulse.SinkInfo;
-import com.harrcharr.pulse.SinkInfoCallback;
-import com.harrcharr.pulse.SinkInput;
-import com.harrcharr.pulse.SubscriptionCallback;
+import com.harrcharr.reverb.pulseutil.PulseManager;
+import com.harrcharr.reverb.pulseutil.SinkEventListener;
+import com.harrcharr.reverb.widgets.OwnerStreamNodeView;
+import com.harrcharr.reverb.widgets.StreamNodeView;
 
-public class SinkFragment extends StreamNodeFragment<SinkInfo> {
-	protected InfoCallback<SinkInfo> mInfoCallback = 
-			new SinkCallback();
-	protected SubscriptionCallback mSubscriptionCallback = 
-			new SinkSubscriptionCallback();
-	
+public class SinkFragment extends StreamNodeFragment<SinkInfo>
+implements SinkEventListener {
 	public SinkFragment() {
 		super();
 	}
-	
-	private class SinkCallback extends SinkInfoCallback {
-		public void run(final SinkInfo si) {
-			int idx = si.getIndex();
-			Log.d("Reverb [adapter]", "We're in a SinkCallback run().");
-			Log.d("Reverb", "Update index "+idx+"view group"+getViewGroup());
-			
-			if (getViewGroup() != null) {
-				final StreamNodeView<SinkInfo> v = getStreamNodeViewByIndex(si.getIndex());	
-				
-				Log.d("Reverb", "Update node is "+v+" and index "+idx);
-				if (v != null) {
-					getActivity().runOnUiThread(new Runnable() {
-						public void run() {
-							v.setNode(si);
-						}
-					});
-					
-					Log.d("Reverb", "put with idx "+idx);
-					return;
-				}
-			}
-			
-			Log.d("Reverb", "put with idx "+idx);
-			SinkFragment.this.addNode(si);
-		}
+
+	@Override
+	public void onSinkUpdated(PulseManager p, SinkInfo node) {
+		updateNode(node);
+	}
+
+	@Override
+	public void onSinkRemoved(PulseManager p, int index) {
+		removeNode(index);
+	}
+
+	@Override
+	public Map<Integer, SinkInfo> getNodesFromManager(PulseManager p) {
+		return p.getSinks();
 	}
 	
-	private class SinkSubscriptionCallback extends SubscriptionCallback {
-		public void run(int type, int index) {
-			Log.d("SinkSubscriptionCallback", type + "index: " + index);
-			if (type == EVENT_REMOVE) {
-				removeNode(index);
-			} else {
-				Log.w("Reverb", ""+getPulseContext());
-				getPulseContext().getSinkInfo(index, getInfoCallback());
-			}
-		}
-	}
-
 	@Override
-	protected InfoCallback<SinkInfo> getInfoCallback() {
-		return mInfoCallback;
+	public void onManagerAttached(PulseManager p) {
+		p.addOnSinkEventListener(this);
 	}
-
+	
 	@Override
-	protected SubscriptionCallback getSubscriptionCallback() {
-		return mSubscriptionCallback;
+	protected StreamNodeView<SinkInfo> makeNewStreamNodeView() {
+		return new OwnerStreamNodeView<SinkInfo>(getActivity());
 	}
-
-	@Override
-	protected void loadStreamNodeList() {
-		getPulseContext().getSinkInfoList(getInfoCallback());
-	}
-
-	@Override
-	protected void subscribeStreamNode() {
-		getPulseContext().subscribeSink(getSubscriptionCallback());
-	}
-
 }

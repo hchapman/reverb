@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+    <include layout="@layout/node_view_common" />  
+    <ToggleButton
+        android:id="@+id/defaultOwner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/streamMax"
+        android:layout_toLeftOf="@+id/nodeMute"
+        android:text="Default Stream"
+        android:textOff="Default"
+        android:textOn="Default" />
+</merge>

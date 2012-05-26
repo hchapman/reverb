@@ -1,4 +1,4 @@
-package com.harrcharr.reverb;
+package com.harrcharr.reverb.widgets;
 
 import android.content.Context;
 import android.util.AttributeSet;

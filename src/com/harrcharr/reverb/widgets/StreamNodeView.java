@@ -19,7 +19,7 @@
  * Contributors:
  *     Harrison Chapman - initial API and implementation
  ******************************************************************************/
-package com.harrcharr.reverb;
+package com.harrcharr.reverb.widgets;
 
 import java.util.ArrayList;
 
@@ -36,7 +36,10 @@ import android.widget.ToggleButton;
 
 import com.harrcharr.pulse.StreamNode;
 import com.harrcharr.pulse.Volume;
-import com.harrcharr.reverb.SynchronizedSeekBar.OnTouchEventListener;
+import com.harrcharr.reverb.R;
+import com.harrcharr.reverb.R.id;
+import com.harrcharr.reverb.R.layout;
+import com.harrcharr.reverb.widgets.SynchronizedSeekBar.OnTouchEventListener;
 
 public class StreamNodeView<Node extends StreamNode> extends RelativeLayout {
 	protected Node mNode;
@@ -53,20 +56,24 @@ public class StreamNodeView<Node extends StreamNode> extends RelativeLayout {
 	
 	public StreamNodeView(Context context) {
 		super(context);
-		View.inflate(context, R.layout.node_view, this);
+		inflateViewFromLayout(context);
 		prepareViews();
 	}
 
 	public StreamNodeView(Context context, AttributeSet attrs) {
 		super(context, attrs);
-		View.inflate(context, R.layout.node_view, this);
+		inflateViewFromLayout(context);
 		prepareViews();
 	}
 	
 	public StreamNodeView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
-		View.inflate(context, R.layout.node_view, this);
+		inflateViewFromLayout(context);
 		prepareViews();
+	}
+	
+	protected void inflateViewFromLayout(Context context) {
+		View.inflate(context, R.layout.owned_node_view, this);
 	}
 	
 	protected void prepareViews() {
@@ -230,7 +237,9 @@ public class StreamNodeView<Node extends StreamNode> extends RelativeLayout {
 			if (updateSlider)
 				mVolumeSlider.setProgress(volume);
 			mLinear.setText(" (" + Volume.asPercent(volume, 1) + "%)");
-			mDb.setText(Volume.asDecibels(volume, 2) + " dB");
+			
+			double db = Volume.asDecibels(volume, 2);
+			mDb.setText((volume == 0 ? "-\u221E" : db) + " dB");
 		}
 		
 		@Override
