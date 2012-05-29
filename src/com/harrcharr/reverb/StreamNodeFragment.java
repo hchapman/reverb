@@ -64,12 +64,10 @@ implements PulseConnectionListener {
     }
     
     protected void updateNode(final T node) {
-    	Log.d("StreamNodeFragment", "Updating a node");
     	if(getViewGroup() != null) {
     		getActivity().runOnUiThread(new Runnable(){
     			public void run() {
     				StreamNodeView<T> v = getStreamNodeViewByIndex(node.getIndex());
-    				Log.d("StreamNodeFragment", "View is "+v);
     				if (v == null) {
     					v = makeNewStreamNodeView();
     					getViewGroup().addView(v);

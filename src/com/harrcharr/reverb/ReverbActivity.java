@@ -45,7 +45,7 @@ import com.harrcharr.reverb.pulseutil.PulseManager;
 
 public class ReverbActivity extends ActionBarTabsPager
 implements HasPulseManager, PulseConnectionListener {
-	protected final String DEFAULT_SERVER = "192.168.1.104";
+	protected final String DEFAULT_SERVER = "192.168.1.109";
 	
 	private PulseManager mPulseManager;
 	
@@ -54,12 +54,13 @@ implements HasPulseManager, PulseConnectionListener {
 	
 	protected ActionBar mActionBar;
 
-    /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
     	setContentView(R.layout.main);
 
+    	// It is critical that we instantiate the PulseManager before any of
+    	// our child fragments can be created. They count on its existence.
     	mPulseManager = new PulseManager();
     	mPulseManager.addOnPulseConnectionListener(this);
     	mPulseManager.connect(DEFAULT_SERVER);
