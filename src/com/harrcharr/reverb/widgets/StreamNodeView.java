@@ -117,7 +117,6 @@ public class StreamNodeView<Node extends StreamNode> extends RelativeLayout {
 	
 	public synchronized void setVolume(Volume volume) {	
 		mVolume = volume; 
-		Log.d("Reverb", "Num channels "+volume.getNumChannels());
 		
 		// If we presently have no volume sliders in the widget
 		if (mSliders == null) {			
@@ -128,7 +127,6 @@ public class StreamNodeView<Node extends StreamNode> extends RelativeLayout {
 				
 				mSliders.add(v);
 				mVolumeGroup.addView(v);
-				Log.d("Reverb", "Addin a volume");
 				i++;
 			}
 			

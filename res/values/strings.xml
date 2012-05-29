@@ -3,5 +3,8 @@
 
     <string name="hello">Hello World, Reverb!</string>
     <string name="app_name">Reverb</string>
+    <string name="prefs_key_default_server">default_server_hostname</string>
+    <string name="prefs_summary_default_server">The server which Reverb will try to connect to, by default</string>
+    <string name="prefs_title_default_server">Default Server</string>
 
 </resources>

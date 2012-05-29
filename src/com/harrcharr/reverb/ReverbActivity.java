@@ -24,13 +24,14 @@ package com.harrcharr.reverb;
 import java.util.ArrayList;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -38,15 +39,14 @@ import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.ActionBar.Tab;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
+import com.actionbarsherlock.view.MenuItem;
 import com.harrcharr.pulse.SinkInput;
 import com.harrcharr.reverb.pulseutil.HasPulseManager;
 import com.harrcharr.reverb.pulseutil.PulseConnectionListener;
 import com.harrcharr.reverb.pulseutil.PulseManager;
 
 public class ReverbActivity extends ActionBarTabsPager
-implements HasPulseManager, PulseConnectionListener {
-	protected final String DEFAULT_SERVER = "192.168.1.109";
-	
+implements HasPulseManager, PulseConnectionListener {	
 	private PulseManager mPulseManager;
 	
 	protected ListView mSinkInputView;
@@ -63,7 +63,7 @@ implements HasPulseManager, PulseConnectionListener {
     	// our child fragments can be created. They count on its existence.
     	mPulseManager = new PulseManager();
     	mPulseManager.addOnPulseConnectionListener(this);
-    	mPulseManager.connect(DEFAULT_SERVER);
+    	mPulseManager.connect(ReverbSharedPreferences.getDefaultServer(this));
 
     	mActionBar = getSupportActionBar();
 
@@ -85,10 +85,9 @@ implements HasPulseManager, PulseConnectionListener {
     	mActionBar.setDisplayShowCustomEnabled(true);
     	mActionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
     	
-    	
     	((EditText)mActionBar.getCustomView()
-    			.findViewById(R.id.serverUrl)).setText(DEFAULT_SERVER);
-    	((Button)mActionBar.getCustomView()
+    			.findViewById(R.id.serverUrl)).setText(ReverbSharedPreferences.getDefaultServer(this));
+    	((ImageButton)mActionBar.getCustomView()
     			.findViewById(R.id.serverChange)).setOnClickListener(
     			new OnClickListener() {
 					public void onClick(View v) {
@@ -103,6 +102,12 @@ implements HasPulseManager, PulseConnectionListener {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getSupportMenuInflater();
         inflater.inflate(R.menu.main_menu, menu);
+        
+        Intent prefsIntent = new Intent(this.getApplicationContext(),
+                ReverbPreferencesActivity.class);
+         
+        MenuItem preferences = menu.findItem(R.id.item1);
+        preferences.setIntent(prefsIntent);
         return true;
     }
     

@@ -17,12 +17,13 @@
 
     </EditText>
 
-    <Button
+    <ImageButton
         android:id="@+id/serverChange"
-        style="?android:attr/buttonStyleSmall"
+        style="@android:style/Widget.Holo.Button.Borderless.Small"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="Connect" />
+        android:contentDescription="Connect"
+        android:src="@drawable/navigation_accept" />
 
 </LinearLayout>
