@@ -33,6 +33,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.actionbarsherlock.app.SherlockFragment;
+import com.harrcharr.pulse.Stream;
 import com.harrcharr.pulse.StreamNode;
 import com.harrcharr.reverb.pulseutil.HasPulseManager;
 import com.harrcharr.reverb.pulseutil.PulseConnectionListener;
@@ -40,7 +41,7 @@ import com.harrcharr.reverb.pulseutil.PulseManager;
 import com.harrcharr.reverb.widgets.StreamNodeView;
 
 public abstract class StreamNodeFragment<T extends StreamNode> extends SherlockFragment
-implements PulseConnectionListener {
+implements PulseConnectionListener, HasPulseManager {
 	protected ViewGroup mNodeHolder;
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -63,27 +64,47 @@ implements PulseConnectionListener {
         return v;
     }
     
-    protected void updateNode(final T node) {
+    protected StreamNodeView<T> updateNode(final T node) {
     	if(getViewGroup() != null) {
-    		getActivity().runOnUiThread(new Runnable(){
-    			public void run() {
-    				StreamNodeView<T> v = getStreamNodeViewByIndex(node.getIndex());
-    				if (v == null) {
-    					v = makeNewStreamNodeView();
-    					getViewGroup().addView(v);
+    		StreamNodeView<T> v = getStreamNodeViewByIndex(node.getIndex());
+    		if (v == null) {
+    			final StreamNodeView<T> nodeView = makeNewStreamNodeView();
+    			
+    			getActivity().runOnUiThread(new Runnable() {
+    				public void run() {
+    					getViewGroup().addView(nodeView);
+    					nodeView.setNode(node);
     				}
-    				v.setNode(node);
-    			}
-    		});	
+    			});
+    			
+    			return nodeView;
+    		} else {
+    			final StreamNodeView<T> nodeView = v;
+    			
+    			getActivity().runOnUiThread(new Runnable() {
+    				public void run() {
+    					nodeView.setNode(node);
+    				}
+    			});
+    			
+    			return nodeView;
+    		}	
     	}
+    	
+    	return null;
     }
     protected void removeNode(final int index) {
     	if(getViewGroup() != null) {
-	    	getActivity().runOnUiThread(new Runnable(){
-	    		public void run() {
-	    			getViewGroup().removeView(getStreamNodeViewByIndex(index));
-	    		}
-	    	});	
+    		final StreamNodeView<T> v = getStreamNodeViewByIndex(index);
+    		if (v != null) {
+    			getActivity().runOnUiThread(new Runnable(){
+    				public void run() {
+    					getViewGroup().removeView(v);
+    				}
+    			});
+    			
+    			// Destroy the StreamNode, and anything it might be holding on to
+    		}
     	}
     }
     
@@ -95,7 +116,11 @@ implements PulseConnectionListener {
     	if (getViewGroup() == null)
     		return null;
     				
-    	return (StreamNodeView<T>)getViewGroup().findViewById(idx);
+    	try {
+    		return (StreamNodeView<T>)getViewGroup().findViewById(idx);
+    	} catch (ClassCastException e) {
+    		return null;
+    	}
     } 
 	
 	public void onAttach(Activity activity) {
@@ -142,5 +167,9 @@ implements PulseConnectionListener {
 	}
 	public void onPulseConnectionFailed(PulseManager p) {
 		// Right now we do nothing on failed connect.
+	}
+	
+	public PulseManager getPulseManager() {
+		return getActivity() == null ? null : ((HasPulseManager)getActivity()).getPulseManager();
 	}
 }

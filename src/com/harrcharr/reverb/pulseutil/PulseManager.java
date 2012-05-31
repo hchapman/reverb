@@ -1,6 +1,7 @@
 package com.harrcharr.reverb.pulseutil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,7 +9,6 @@ import java.util.Map;
 import android.util.Log;
 
 import com.harrcharr.pulse.Mainloop;
-import com.harrcharr.pulse.NoConnectionException;
 import com.harrcharr.pulse.NotifyCallback;
 import com.harrcharr.pulse.PulseContext;
 import com.harrcharr.pulse.SinkInfo;
@@ -26,28 +26,32 @@ import com.harrcharr.pulse.SubscriptionCallback;
  * either pulse connection status changes, or the lists of nodes change.
  */
 public class PulseManager {
-	protected Mainloop m;
-	protected PulseContext mPulse;
-	protected List<PulseConnectionListener> mPulseConnectionListeners =
+	private Mainloop mPulseMainloop;
+	private PulseContext mPulse;
+	private List<PulseConnectionListener> mPulseConnectionListeners =
 			new ArrayList<PulseConnectionListener>();	
 	
-	protected List<SinkEventListener> mSinkEventListeners =
+	private List<SinkEventListener> mSinkEventListeners =
 			new ArrayList<SinkEventListener>();
-	protected List<SinkInputEventListener> mSinkInputEventListeners =
+	private List<SinkInputEventListener> mSinkInputEventListeners =
 			new ArrayList<SinkInputEventListener>();
-	protected List<SourceOutputEventListener> mSourceOutputEventListeners =
+	private List<SourceOutputEventListener> mSourceOutputEventListeners =
 			new ArrayList<SourceOutputEventListener>();
 
 	
 	private String mServer;
 	
-	protected HashMap<Integer, SinkInfo> mSinks = new HashMap<Integer, SinkInfo>();
+	protected Map<Integer, SinkInfo> mSinks;
 	//protected HashMap<Integer, SourceInfo> mSources;
-	protected HashMap<Integer, SinkInput> mSinkInputs = new HashMap<Integer, SinkInput>();
-	protected HashMap<Integer, SourceOutput> mSourceOutputs = new HashMap<Integer, SourceOutput>();
+	protected Map<Integer, SinkInput> mSinkInputs;
+	protected Map<Integer, SourceOutput> mSourceOutputs;
 	
 	public PulseManager() {
-		m = new Mainloop();
+		mPulseMainloop = new Mainloop();
+		
+		mSinks = Collections.synchronizedMap(new HashMap<Integer, SinkInfo>());
+		mSinkInputs = Collections.synchronizedMap(new HashMap<Integer, SinkInput>());
+		mSourceOutputs = Collections.synchronizedMap(new HashMap<Integer, SourceOutput>());
 	}
 	
 	public PulseManager(String server) {
@@ -62,7 +66,7 @@ public class PulseManager {
     		mPulse.close();
     	}
     	
-    	mPulse = new PulseContext(m);
+    	mPulse = new PulseContext(mPulseMainloop);
 
     	mPulse.setConnectionReadyCallback(new NotifyCallback() {
     		@Override
@@ -144,98 +148,162 @@ public class PulseManager {
     	return mPulse;
     }
 
-	public void addOnSinkEventListener(SinkEventListener l) {
-		mSinkEventListeners.add(l);
-	}
-	public void removeOnSinkEventListener(SinkEventListener l) {
-		mSinkEventListeners.remove(l);
-	}
-	
-	private void onSinkUpdated(final SinkInfo node) {
-		mSinks.put(new Integer(node.getIndex()), node);
-		
-		for (final SinkEventListener l : mSinkEventListeners) {
-			new Thread() {
-				public void run() {
-					l.onSinkUpdated(PulseManager.this, node);
-				}
-			}.start();
+    public void addOnSinkEventListener(SinkEventListener l) {
+    	synchronized(mSinkEventListeners) {
+    		mSinkEventListeners.add(l);
+    	}
+    }
+    public void removeOnSinkEventListener(SinkEventListener l) {
+    	synchronized(mSinkEventListeners) {
+    		mSinkEventListeners.remove(l);
+    	}
+    }
+
+    private void onSinkUpdated(final SinkInfo node) {
+		final Integer key = new Integer(node.getIndex());
+		final boolean isNew = !mSinks.containsKey(key);
+		final SinkInfo updateNode = isNew ? node : mSinks.get(key);
+		if (isNew) {
+			updateNode.update(node);
+		} else {
+			mSinks.put(key, updateNode);
 		}
-	}
-	
-	private void onSinkRemoved(final int index) {
-		for (final SinkEventListener l : mSinkEventListeners) {
-			new Thread() {
-				public void run() {
-					l.onSinkRemoved(PulseManager.this, index);
-				}
-			}.start();
-		}
-	}
-	
-	public void addOnSinkInputEventListener(SinkInputEventListener l) {
-		mSinkInputEventListeners.add(l);
+
+    	synchronized(mSinkEventListeners) {
+    		for (final SinkEventListener l : mSinkEventListeners) {
+    			new Thread() {
+    				public void run() {
+    					l.onSinkUpdated(PulseManager.this, updateNode);
+    				}
+    			}.start();
+    		}
+    	}
+    }
+
+    private void onSinkRemoved(final int index) {
+    	synchronized(mSinkEventListeners) {
+    		for (final SinkEventListener l : mSinkEventListeners) {
+    			new Thread() {
+    				public void run() {
+    					l.onSinkRemoved(PulseManager.this, index);
+    				}
+    			}.start();
+    		}
+    	}
+    }
+
+    public void addOnSinkInputEventListener(SinkInputEventListener l) {
+    	synchronized(mSinkInputEventListeners) {
+    		mSinkInputEventListeners.add(l);
+    	}
 	}
 	public void removeOnSinkInputEventListener(SinkInputEventListener l) {
-		mSinkInputEventListeners.remove(l);
+		synchronized(mSinkInputEventListeners) {
+			mSinkInputEventListeners.remove(l);
+		}
 	}
 	
 	private void onSinkInputUpdated(final SinkInput node) {
-		mSinkInputs.put(new Integer(node.getIndex()), node);
+		final Integer key = new Integer(node.getIndex());
+		final boolean isNew = !mSinkInputs.containsKey(key);
+		final SinkInput updateNode = isNew ? node : mSinkInputs.get(key);
+		final boolean ownerChanged = isNew || 
+				(updateNode.getOwnerIndex() == node.getOwnerIndex());
+		if (isNew) {
+			updateNode.update(node);
+		} else {
+			mSinkInputs.put(key, updateNode);
+		}
 		
-		for (final SinkInputEventListener l : mSinkInputEventListeners) {
-			new Thread() {
-				public void run() {
-					l.onSinkInputUpdated(PulseManager.this, node);
-				}
-			}.start();
+		if (ownerChanged) {
+			updateNode.setOwner(getSink(updateNode.getOwnerIndex(), true));
+		}
+
+		synchronized(mSinkInputEventListeners) {
+			for (final SinkInputEventListener l : mSinkInputEventListeners) {
+				new Thread() {
+					public void run() {
+						l.onSinkInputUpdated(PulseManager.this, updateNode);
+					}
+				}.start();
+			}
 		}
 	}
 	
 	private void onSinkInputRemoved(final int index) {
-		for (final SinkInputEventListener l : mSinkInputEventListeners) {
-			new Thread() {
-				public void run() {
-					l.onSinkInputRemoved(PulseManager.this, index);
-				}
-			}.start();
+		mSinkInputs.remove(new Integer(index));
+		
+		synchronized(mSinkInputEventListeners) {
+			for (final SinkInputEventListener l : mSinkInputEventListeners) {
+				new Thread() {
+					public void run() {
+						l.onSinkInputRemoved(PulseManager.this, index);
+					}
+				}.start();
+			}
 		}
 	}
 	
 	public void addOnSourceOutputEventListener(SourceOutputEventListener l) {
-		mSourceOutputEventListeners.add(l);
+		synchronized(mSourceOutputEventListeners) {
+			mSourceOutputEventListeners.add(l);
+		}
 	}
 	public void removeOnSourceOutputEventListener(SourceOutputEventListener l) {
-		mSourceOutputEventListeners.remove(l);
+		synchronized(mSourceOutputEventListeners) {
+			mSourceOutputEventListeners.remove(l);
+		}
 	}
 	
 	private void onSourceOutputUpdated(final SourceOutput node) {
-		mSourceOutputs.put(new Integer(node.getIndex()), node);
+		final Integer key = new Integer(node.getIndex());
+		final boolean isNew = !mSourceOutputs.containsKey(key);
+		final SourceOutput updateNode = isNew ? node : mSourceOutputs.get(key);
+		final boolean ownerChanged = isNew || 
+				(updateNode.getOwnerIndex() == node.getOwnerIndex());
+		if (isNew) {
+			updateNode.update(node);
+		} else {
+			mSourceOutputs.put(key, updateNode);
+		}
 		
-		for (final SourceOutputEventListener l : mSourceOutputEventListeners) {
-			new Thread() {
-				public void run() {
-					l.onSourceOutputUpdated(PulseManager.this, node);
-				}
-			}.start();
+		// When sources are implemented
+		if (ownerChanged) {
+//			updateNode.setOwner(getSink(updateNode.getOwnerIndex(), true));
+		}
+		
+		synchronized(mSourceOutputEventListeners) {
+			for (final SourceOutputEventListener l : mSourceOutputEventListeners) {
+				new Thread() {
+					public void run() {
+						l.onSourceOutputUpdated(PulseManager.this, updateNode);
+					}
+				}.start();
+			}
 		}
 	}
 	
 	private void onSourceOutputRemoved(final int index) {
-		for (final SourceOutputEventListener l : mSourceOutputEventListeners) {
-			new Thread() {
-				public void run() {
-					l.onSourceOutputRemoved(PulseManager.this, index);
-				}
-			}.start();
+		synchronized(mSourceOutputEventListeners) {
+			for (final SourceOutputEventListener l : mSourceOutputEventListeners) {
+				new Thread() {
+					public void run() {
+						l.onSourceOutputRemoved(PulseManager.this, index);
+					}
+				}.start();
+			}
 		}
 	}
 
 	public void addOnPulseConnectionListener(PulseConnectionListener l) {
-		mPulseConnectionListeners.add(l);
+		synchronized(mPulseConnectionListeners) {
+			mPulseConnectionListeners.add(l);
+		}
 	}
 	public void removeOnPulseConnectionListener(PulseConnectionListener l) {
-		mPulseConnectionListeners.remove(l);
+		synchronized(mPulseConnectionListeners) {
+			mPulseConnectionListeners.remove(l);
+		}
 	}
 	
 	private void onPulseConnectionReady() {
@@ -262,28 +330,37 @@ public class PulseManager {
 		});
 		
 		// Alert the listeners.
-		for (final PulseConnectionListener l : mPulseConnectionListeners) {
-			new Thread() {
-				public void run() {
-					l.onPulseConnectionReady(PulseManager.this);
-				}
-			}.start();
+		synchronized(mPulseConnectionListeners) {
+			for (final PulseConnectionListener l : mPulseConnectionListeners) {
+				l.onPulseConnectionReady(PulseManager.this);
+			}
 		}
 	}
 	
 	private void onPulseConnectionFailed() {
-		for (final PulseConnectionListener l : mPulseConnectionListeners) {
-			new Thread() {
-				public void run() {
-					l.onPulseConnectionFailed(PulseManager.this);
-				}
-			}.start();
+		synchronized(mPulseConnectionListeners) {
+			for (final PulseConnectionListener l : mPulseConnectionListeners) {
+				l.onPulseConnectionFailed(PulseManager.this);
+			}
 		}
 	}
-	
 	public Map<Integer, SinkInfo> getSinks() {
 		return mSinks;
 	}
+	public SinkInfo getSink(int i) { return getSink(i, false); }
+	protected SinkInfo getSink(int i, boolean putStub) {
+		SinkInfo sink = mSinks.get(new Integer(i));
+		if (sink != null) {
+			return sink;
+		} else if (putStub) {
+			sink = new SinkInfo(mPulse);
+			mSinks.put(new Integer(i), 	sink);
+			return sink;
+		} else {
+			return null;
+		}
+	}
+	
 	public Map<Integer, SinkInput> getSinkInputs() {
 		return mSinkInputs;
 	}

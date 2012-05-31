@@ -47,23 +47,18 @@ import com.harrcharr.reverb.pulseutil.PulseManager;
 
 public class ReverbActivity extends ActionBarTabsPager
 implements HasPulseManager, PulseConnectionListener {	
-	private PulseManager mPulseManager;
-	
 	protected ListView mSinkInputView;
 	protected ArrayList<SinkInput> sinkInputs;
 	
 	protected ActionBar mActionBar;
+	
+	public ReverbActivity() {
+	}
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
     	setContentView(R.layout.main);
-
-    	// It is critical that we instantiate the PulseManager before any of
-    	// our child fragments can be created. They count on its existence.
-    	mPulseManager = new PulseManager();
-    	mPulseManager.addOnPulseConnectionListener(this);
-    	mPulseManager.connect(ReverbSharedPreferences.getDefaultServer(this));
 
     	mActionBar = getSupportActionBar();
 
@@ -91,11 +86,28 @@ implements HasPulseManager, PulseConnectionListener {
     			.findViewById(R.id.serverChange)).setOnClickListener(
     			new OnClickListener() {
 					public void onClick(View v) {
-						mPulseManager.connect(((EditText)mActionBar.getCustomView()
+						getPulseManager().connect(((EditText)mActionBar.getCustomView()
 								.findViewById(R.id.serverUrl))
 								.getText().toString());
 					}
 				});
+    }
+    
+    @Override
+    public void onStart() {
+    	getPulseManager().addOnPulseConnectionListener(this);
+    	super.onStart();
+    }
+    
+    @Override
+    public void onStop() {
+    	getPulseManager().removeOnPulseConnectionListener(this);
+    	super.onStop();
+    }
+    
+    @Override
+    public void onDestroy() {
+    	super.onDestroy();
     }
     
     @Override
@@ -112,7 +124,7 @@ implements HasPulseManager, PulseConnectionListener {
     }
     
     public PulseManager getPulseManager() {
-    	return mPulseManager;
+    	return ((HasPulseManager)getApplication()).getPulseManager();
     }
     
     public void onPulseConnectionReady(PulseManager p) {

@@ -37,5 +37,11 @@ implements SinkInputEventListener {
 	public void onManagerAttached(PulseManager p) {
 		p.addOnSinkInputEventListener(this);
 	}
-
+//
+//	@Override
+//	protected StreamNodeView<SinkInput> updateNode(SinkInput node) {
+//		StreamNodeView<SinkInput> v = super.updateNode(node);
+//		
+//		return v;
+//	}
 }

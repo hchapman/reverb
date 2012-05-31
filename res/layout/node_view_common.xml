@@ -24,27 +24,33 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:layout_below="@+id/volumeHolder" />
+        android:layout_below="@+id/volumeHolder"
+        android:max="100" />
 
-    <ToggleButton
+    <com.harrcharr.reverb.widgets.CenterCompoundButton
         android:id="@+id/lockChannels"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:layout_below="@+id/streamMax"
-        android:checked="true"
-        android:text="Lock Channels"
-        android:textOff="Lock"
-        android:textOn="Lock" />
+        android:button="@drawable/lock_button_selector"
+        android:gravity="center"
+        android:checked="true" />
 
-    <ToggleButton
+    <com.harrcharr.reverb.widgets.CenterCompoundButton
         android:id="@+id/nodeMute"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/streamMax"
         android:layout_toLeftOf="@+id/lockChannels"
-        android:text="Mute Stream"
-        android:textOff="Mute"
-        android:textOn="Mute" />
+        android:button="@drawable/mute_button_selector" 
+        android:gravity="center"/>
+
+    <ImageView
+        android:id="@+id/imageView1"
+        android:layout_width="match_parent"
+        android:layout_height="10dp"
+        android:layout_below="@+id/nodeMute"
+        android:src="@android:drawable/divider_horizontal_dark" />
 
 </merge>

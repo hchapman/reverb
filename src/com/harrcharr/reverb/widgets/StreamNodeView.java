@@ -29,28 +29,32 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.ToggleButton;
 
+import com.harrcharr.pulse.Stream;
+import com.harrcharr.pulse.Stream.ReadCallback;
 import com.harrcharr.pulse.StreamNode;
 import com.harrcharr.pulse.Volume;
 import com.harrcharr.reverb.R;
-import com.harrcharr.reverb.R.id;
-import com.harrcharr.reverb.R.layout;
 import com.harrcharr.reverb.widgets.SynchronizedSeekBar.OnTouchEventListener;
 
 public class StreamNodeView<Node extends StreamNode> extends RelativeLayout {
 	protected Node mNode;
 	
 	protected TextView mName;
+	protected ProgressBar mPeak;
 	
 	protected Volume mVolume; // The volume which this layout represents
 	protected ArrayList<VolumeSlider> mSliders;
 	
-	protected ToggleButton mMute, mLocked;	
+	protected CompoundButton mMute, mLocked;	
 	protected ViewGroup mVolumeGroup;
+	
+	private Stream mPeakStream;
 	
 	private boolean mTracking;
 	
@@ -80,14 +84,15 @@ public class StreamNodeView<Node extends StreamNode> extends RelativeLayout {
 		mName = (TextView) this.findViewById(R.id.nodeName);
 		
 		mVolumeGroup = (ViewGroup) this.findViewById(R.id.volumeHolder);
+		mPeak = (ProgressBar) this.findViewById(R.id.streamMax);
 		
-        mMute = (ToggleButton) this.findViewById(R.id.nodeMute);
-        mLocked = (ToggleButton) this.findViewById(R.id.lockChannels);
+        mMute = (CompoundButton) this.findViewById(R.id.nodeMute);
+        mLocked = (CompoundButton) this.findViewById(R.id.lockChannels);
         
     	mMute.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				mNode.setMute(((ToggleButton)v).isChecked(), null);
+				mNode.setMute(((CompoundButton)v).isChecked(), null);
 			}
 		});
 
@@ -101,9 +106,35 @@ public class StreamNodeView<Node extends StreamNode> extends RelativeLayout {
 	}
 	
 	public void setNode(Node node) {
+		final int oldIndex = mNode == null ? -1 : mNode.getIndex();
+		
 		mNode = node;
-		setId(node.getIndex());
+		
+		if (node.getIndex() != oldIndex) {
+			setId(node.getIndex());
+			setStreamFromNode(node);
+		} else {
+			
+		}
+		
 		reload();
+	}
+	
+	protected void setStreamFromNode(Node node) {
+		mPeakStream = node.getNewStream("Peak detect");
+		node.connectRecordStream(mPeakStream);
+		
+		mPeakStream.setReadCallback(new ReadCallback() {
+			public void run(final double vol) {
+				post(new Runnable() {
+					public void run() {
+						mPeak.setProgress((int)(vol*100));
+					}
+				});
+			}
+		}); 
+		
+		Log.d("StreamNodeView", "Set new peak stream");
 	}
 	
 	public void update(long ptr) {
