@@ -2,10 +2,7 @@ package com.harrcharr.reverb.pulseutil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import android.util.Log;
 import android.util.SparseArray;
@@ -17,6 +14,8 @@ import com.harrcharr.pulse.SinkInfo;
 import com.harrcharr.pulse.SinkInfoCallback;
 import com.harrcharr.pulse.SinkInput;
 import com.harrcharr.pulse.SinkInputInfoCallback;
+import com.harrcharr.pulse.SourceInfo;
+import com.harrcharr.pulse.SourceInfoCallback;
 import com.harrcharr.pulse.SourceOutput;
 import com.harrcharr.pulse.SourceOutputInfoCallback;
 import com.harrcharr.pulse.SubscriptionCallback;
@@ -45,6 +44,8 @@ public class PulseManager {
 			new ArrayList<SinkEventListener>();
 	private List<SinkInputEventListener> mSinkInputEventListeners =
 			new ArrayList<SinkInputEventListener>();
+	private List<SourceEventListener> mSourceEventListeners =
+			new ArrayList<SourceEventListener>();
 	private List<SourceOutputEventListener> mSourceOutputEventListeners =
 			new ArrayList<SourceOutputEventListener>();
 
@@ -52,7 +53,7 @@ public class PulseManager {
 	private String mServer;
 	
 	protected SparseArray<SinkInfo> mSinks;
-	//protected HashMap<Integer, SourceInfo> mSources;
+	protected SparseArray<SourceInfo> mSources;
 	protected SparseArray<SinkInput> mSinkInputs;
 	protected SparseArray<SourceOutput> mSourceOutputs;
 	
@@ -60,6 +61,7 @@ public class PulseManager {
 		mPulseMainloop = new Mainloop();
 		
 		mSinks = new SparseArray<SinkInfo>();
+		mSources = new SparseArray<SourceInfo>();
 		mSinkInputs = new SparseArray<SinkInput>();
 		mSourceOutputs = new SparseArray<SourceOutput>();
 	}
@@ -111,6 +113,22 @@ public class PulseManager {
     				getPulseContext().getSinkInfo(index, new SinkInfoCallback() {
     					public void run(SinkInfo i) {
     						onSinkUpdated(i);
+    					}
+    				});
+    			}
+    		}
+    	});
+    	
+    	// Subscribe to source updates
+    	getPulseContext().subscribeSource(new SubscriptionCallback() {
+    		public void run(int type, int index) {
+    			Log.d("SourceSubscriptionCallback", type + ", index: " + index);
+    			if (type == EVENT_REMOVE) {
+    				onSourceRemoved(index);
+    			} else {
+    				getPulseContext().getSourceInfo(index, new SourceInfoCallback() {
+    					public void run(SourceInfo i) {
+    						onSourceUpdated(i);
     					}
     				});
     			}
@@ -197,6 +215,51 @@ public class PulseManager {
     			new Thread() {
     				public void run() {
     					l.onSinkRemoved(PulseManager.this, index);
+    				}
+    			}.start();
+    		}
+    	}
+    }
+    
+    public void addOnSourceEventListener(SourceEventListener l) {
+    	synchronized(mSourceEventListeners) {
+    		mSourceEventListeners.add(l);
+    	}
+    }
+    public void removeOnSourceEventListener(SourceEventListener l) {
+    	synchronized(mSourceEventListeners) {
+    		mSourceEventListeners.remove(l);
+    	}
+    }
+
+    private void onSourceUpdated(final SourceInfo node) {
+		final int key = node.getIndex();
+		final boolean isNew = (mSources.get(key) == null);
+		final SourceInfo updateNode = isNew ? node : mSources.get(key);
+
+		if (!isNew) {
+			updateNode.update(node);
+		} else {
+			mSources.put(key, updateNode);
+		}
+
+    	synchronized(mSourceEventListeners) {
+    		for (final SourceEventListener l : mSourceEventListeners) {
+    			new Thread() {
+    				public void run() {
+    					l.onSourceUpdated(PulseManager.this, updateNode);
+    				}
+    			}.start();
+    		}
+    	}
+    }
+
+    private void onSourceRemoved(final int index) {
+    	synchronized(mSourceEventListeners) {
+    		for (final SourceEventListener l : mSourceEventListeners) {
+    			new Thread() {
+    				public void run() {
+    					l.onSourceRemoved(PulseManager.this, index);
     				}
     			}.start();
     		}
@@ -378,6 +441,23 @@ public class PulseManager {
 		} else if (putStub) {
 			sink = new SinkInfo(mPulse);
 			mSinks.put(i, sink);
+			return sink;
+		} else {
+			return null;
+		}
+	}
+	
+	public SparseArray<SourceInfo> getSources() {
+		return mSources;
+	}
+	public SourceInfo getSource(int i) { return getSource(i, false); }
+	protected SourceInfo getSource(int i, boolean putStub) {
+		SourceInfo sink = mSources.get(i);
+		if (sink != null) {
+			return sink;
+		} else if (putStub) {
+			sink = new SourceInfo(mPulse);
+			mSources.put(i, sink);
 			return sink;
 		} else {
 			return null;

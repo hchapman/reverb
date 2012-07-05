@@ -73,7 +73,7 @@ implements HasPulseManager, PulseConnectionListener {
     	mTabsAdapter.addTab(sinkInputTab, SinkInputFragment.class, null);
     	mTabsAdapter.addTab(sourceOutputTab, SourceOutputFragment.class, null);
     	mTabsAdapter.addTab(sinkTab, SinkFragment.class, null);
-    	mTabsAdapter.addTab(sourceTab, SinkFragment.class, null);
+    	mTabsAdapter.addTab(sourceTab, SourceFragment.class, null);
     	
     	mActionBar.setCustomView(R.layout.server_actionbar);
     	mActionBar.setDisplayShowTitleEnabled(false);
