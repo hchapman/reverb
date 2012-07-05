@@ -1,4 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
 <merge xmlns:android="http://schemas.android.com/apk/res/android">
-    <include layout="@layout/node_view_common"></include>
+
+    <TextView
+        android:id="@+id/nodeName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:text="Node (descriptive) name"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:id="@+id/volumeHolder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/ownerSelector"
+        android:orientation="vertical" >
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/streamMax"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/volumeHolder"
+        android:max="100" />
+
+    <com.harrcharr.reverb.widgets.CenterCompoundButton
+        android:id="@+id/lockChannels"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/streamMax"
+        android:button="@drawable/lock_button_selector"
+        android:gravity="center"
+        android:checked="true" />
+
+    <com.harrcharr.reverb.widgets.CenterCompoundButton
+        android:id="@+id/nodeMute"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/streamMax"
+        android:layout_toLeftOf="@+id/lockChannels"
+        android:button="@drawable/mute_button_selector" 
+        android:gravity="center"/>
+
+    <ImageView
+        android:id="@+id/imageView1"
+        android:layout_width="match_parent"
+        android:layout_height="10dp"
+        android:layout_below="@+id/nodeMute"
+        android:src="@android:drawable/divider_horizontal_dark" />
+    
+    <TextView
+        android:id="@+id/ownerNameOn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/nodeName"
+        android:text="On" />
+    
+    <Spinner
+        android:id="@+id/ownerSelector"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/ownerNameOn"
+        android:layout_below="@+id/nodeName" 
+        android:prompt="@string/app_name"
+        />
 </merge>

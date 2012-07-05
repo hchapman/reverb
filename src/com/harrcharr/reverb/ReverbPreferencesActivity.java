@@ -1,9 +1,10 @@
 package com.harrcharr.reverb;
 
 import android.os.Bundle;
-import android.preference.PreferenceActivity;
 
-public class ReverbPreferencesActivity extends PreferenceActivity {
+import com.actionbarsherlock.app.SherlockPreferenceActivity;
+
+public class ReverbPreferencesActivity extends SherlockPreferenceActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

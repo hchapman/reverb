@@ -1,16 +1,11 @@
 package com.harrcharr.reverb;
 
-import java.util.Map;
+import android.util.SparseArray;
 
-import android.util.Log;
-
-import com.harrcharr.pulse.InfoCallback;
 import com.harrcharr.pulse.SinkInput;
-import com.harrcharr.pulse.SinkInputInfoCallback;
-import com.harrcharr.pulse.SubscriptionCallback;
 import com.harrcharr.reverb.pulseutil.PulseManager;
 import com.harrcharr.reverb.pulseutil.SinkInputEventListener;
-import com.harrcharr.reverb.widgets.StreamNodeView;
+import com.harrcharr.reverb.widgets.OwnedStreamNodeView;
 
 public class SinkInputFragment extends StreamNodeFragment<SinkInput>
 implements SinkInputEventListener {
@@ -29,13 +24,18 @@ implements SinkInputEventListener {
 	}
 
 	@Override
-	public Map<Integer, SinkInput> getNodesFromManager(PulseManager p) {
+	public SparseArray<SinkInput> getNodesFromManager(PulseManager p) {
 		return p.getSinkInputs();
 	}
 
 	@Override
 	public void onManagerAttached(PulseManager p) {
 		p.addOnSinkInputEventListener(this);
+	}
+	
+	@Override
+	protected OwnedStreamNodeView<SinkInput> makeNewStreamNodeView() {
+		return new OwnedStreamNodeView<SinkInput>(getActivity());
 	}
 //
 //	@Override

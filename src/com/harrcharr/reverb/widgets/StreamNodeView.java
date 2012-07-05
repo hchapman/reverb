@@ -42,7 +42,7 @@ import com.harrcharr.pulse.Volume;
 import com.harrcharr.reverb.R;
 import com.harrcharr.reverb.widgets.SynchronizedSeekBar.OnTouchEventListener;
 
-public class StreamNodeView<Node extends StreamNode> extends RelativeLayout {
+public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLayout {
 	protected Node mNode;
 	
 	protected TextView mName;
@@ -76,9 +76,7 @@ public class StreamNodeView<Node extends StreamNode> extends RelativeLayout {
 		prepareViews();
 	}
 	
-	protected void inflateViewFromLayout(Context context) {
-		View.inflate(context, R.layout.owned_node_view, this);
-	}
+	protected abstract void inflateViewFromLayout(final Context context);
 	
 	protected void prepareViews() {
 		mName = (TextView) this.findViewById(R.id.nodeName);
@@ -105,16 +103,11 @@ public class StreamNodeView<Node extends StreamNode> extends RelativeLayout {
 		setVolume(mNode.getVolume());
 	}
 	
-	public void setNode(Node node) {
-		final int oldIndex = mNode == null ? -1 : mNode.getIndex();
-		
-		mNode = node;
-		
-		if (node.getIndex() != oldIndex) {
+	public void setNode(final Node node) {
+		if (mNode != node) {
+			mNode = node;
 			setId(node.getIndex());
 			setStreamFromNode(node);
-		} else {
-			
 		}
 		
 		reload();
@@ -135,10 +128,6 @@ public class StreamNodeView<Node extends StreamNode> extends RelativeLayout {
 		}); 
 		
 		Log.d("StreamNodeView", "Set new peak stream");
-	}
-	
-	public void update(long ptr) {
-		
 	}
 	
 	@Override

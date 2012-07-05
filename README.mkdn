@@ -4,7 +4,7 @@ on your phone!) using libpulse itself.
 
 Requirements
 ========================
-* Jake Wharton's ActionBarSherlock libraries
+* Jake Wharton's ActionBarSherlock libraries, v4.1.0
 * libpulse-android (head of master)
 * Possibly android support libraries, v4
 

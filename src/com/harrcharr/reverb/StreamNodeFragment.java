@@ -28,6 +28,7 @@ import java.util.Map.Entry;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -53,31 +54,31 @@ implements PulseConnectionListener, HasPulseManager {
         	((HasPulseManager)getActivity()).getPulseManager());
         
         if (p != null) {
-	        Iterator<Entry<Integer, T>> nodeIterator = 
-	        		getNodesFromManager(p).entrySet().iterator();
-
-	        while (nodeIterator.hasNext()) {
-	        	updateNode(nodeIterator.next().getValue());
-	        }
+        	synchronized(p) {
+				SparseArray<T> nodes = getNodesFromManager(p);
+				for (int i = 0; i < nodes.size(); i++) {
+					T node = nodes.get(nodes.keyAt(i));
+					if (node != null) {
+						updateNode(node);
+					}
+		    	}
+        	}
         }
         
         return v;
     }
     
-    protected StreamNodeView<T> updateNode(final T node) {
+    protected void updateNode(final T node) {
     	if(getViewGroup() != null) {
     		StreamNodeView<T> v = getStreamNodeViewByIndex(node.getIndex());
-    		if (v == null) {
-    			final StreamNodeView<T> nodeView = makeNewStreamNodeView();
-    			
+    		if (v == null) {    			
     			getActivity().runOnUiThread(new Runnable() {
     				public void run() {
+    					final StreamNodeView<T> nodeView = makeNewStreamNodeView();
     					getViewGroup().addView(nodeView);
     					nodeView.setNode(node);
     				}
     			});
-    			
-    			return nodeView;
     		} else {
     			final StreamNodeView<T> nodeView = v;
     			
@@ -86,12 +87,8 @@ implements PulseConnectionListener, HasPulseManager {
     					nodeView.setNode(node);
     				}
     			});
-    			
-    			return nodeView;
     		}	
     	}
-    	
-    	return null;
     }
     protected void removeNode(final int index) {
     	if(getViewGroup() != null) {
@@ -143,25 +140,34 @@ implements PulseConnectionListener, HasPulseManager {
 	}
 	
 	public abstract void onManagerAttached(PulseManager p);
-	public abstract Map<Integer, T> getNodesFromManager(PulseManager p);
+	public abstract SparseArray<T> getNodesFromManager(PulseManager p);
 	
-	protected StreamNodeView<T> makeNewStreamNodeView() {
-		return new StreamNodeView<T>(getActivity());
-	}
+	protected abstract StreamNodeView<T> makeNewStreamNodeView();
     
-	public void onPulseConnectionReady(PulseManager p) {
-    	if (isVisible()) {
+	public void onPulseConnectionReady(final PulseManager p) {
+    	if (getActivity() != null) {
 	    	getActivity().runOnUiThread(new Runnable() {
 				public void run() {
 					try {
 						getViewGroup().removeAllViews();
 						Log.d("Reverb", "Removed stale nodes");
 					} catch (Exception e) {
-						
+						Log.e("Reverb", e.getMessage());
 					}
 					
+					synchronized(p) {
+						SparseArray<T> nodes = getNodesFromManager(p);
+						for (int i = 0; i < nodes.size(); i++) {
+							T node = nodes.get(nodes.keyAt(i));
+							if (node != null) {
+								updateNode(node);
+							}
+				    	}
+					}
 				}
 			});
+	    	
+
     	}
 		
 	}
@@ -170,6 +176,6 @@ implements PulseConnectionListener, HasPulseManager {
 	}
 	
 	public PulseManager getPulseManager() {
-		return getActivity() == null ? null : ((HasPulseManager)getActivity()).getPulseManager();
+		return ((HasPulseManager)getActivity()).getPulseManager();
 	}
 }

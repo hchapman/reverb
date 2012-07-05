@@ -1,8 +1,6 @@
 package com.harrcharr.reverb;
 
-import java.util.Map;
-
-import android.util.Log;
+import android.util.SparseArray;
 
 import com.harrcharr.pulse.SinkInfo;
 import com.harrcharr.reverb.pulseutil.PulseManager;
@@ -27,7 +25,7 @@ implements SinkEventListener {
 	}
 
 	@Override
-	public Map<Integer, SinkInfo> getNodesFromManager(PulseManager p) {
+	public SparseArray<SinkInfo> getNodesFromManager(PulseManager p) {
 		return p.getSinks();
 	}
 	

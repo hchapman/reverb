@@ -1,12 +1,14 @@
 package com.harrcharr.reverb.pulseutil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import android.util.Log;
+import android.util.SparseArray;
 
 import com.harrcharr.pulse.Mainloop;
 import com.harrcharr.pulse.NotifyCallback;
@@ -26,6 +28,14 @@ import com.harrcharr.pulse.SubscriptionCallback;
  * either pulse connection status changes, or the lists of nodes change.
  */
 public class PulseManager {
+	// Applications whose SourceOutputs are to be ignored.
+	// It is imperative that this list is sorted.
+	final private static String[] IGNORE_APPLICATIONS = {
+		"PulseAudio Volume Control",
+		"Reverb PulseAudio Remote", 
+	};
+
+	
 	private Mainloop mPulseMainloop;
 	private PulseContext mPulse;
 	private List<PulseConnectionListener> mPulseConnectionListeners =
@@ -41,17 +51,17 @@ public class PulseManager {
 	
 	private String mServer;
 	
-	protected Map<Integer, SinkInfo> mSinks;
+	protected SparseArray<SinkInfo> mSinks;
 	//protected HashMap<Integer, SourceInfo> mSources;
-	protected Map<Integer, SinkInput> mSinkInputs;
-	protected Map<Integer, SourceOutput> mSourceOutputs;
+	protected SparseArray<SinkInput> mSinkInputs;
+	protected SparseArray<SourceOutput> mSourceOutputs;
 	
 	public PulseManager() {
 		mPulseMainloop = new Mainloop();
 		
-		mSinks = Collections.synchronizedMap(new HashMap<Integer, SinkInfo>());
-		mSinkInputs = Collections.synchronizedMap(new HashMap<Integer, SinkInput>());
-		mSourceOutputs = Collections.synchronizedMap(new HashMap<Integer, SourceOutput>());
+		mSinks = new SparseArray<SinkInfo>();
+		mSinkInputs = new SparseArray<SinkInput>();
+		mSourceOutputs = new SparseArray<SourceOutput>();
 	}
 	
 	public PulseManager(String server) {
@@ -160,10 +170,11 @@ public class PulseManager {
     }
 
     private void onSinkUpdated(final SinkInfo node) {
-		final Integer key = new Integer(node.getIndex());
-		final boolean isNew = !mSinks.containsKey(key);
+		final int key = node.getIndex();
+		final boolean isNew = (mSinks.get(key) == null);
 		final SinkInfo updateNode = isNew ? node : mSinks.get(key);
-		if (isNew) {
+
+		if (!isNew) {
 			updateNode.update(node);
 		} else {
 			mSinks.put(key, updateNode);
@@ -204,12 +215,13 @@ public class PulseManager {
 	}
 	
 	private void onSinkInputUpdated(final SinkInput node) {
-		final Integer key = new Integer(node.getIndex());
-		final boolean isNew = !mSinkInputs.containsKey(key);
+		final int key = node.getIndex();
+		final boolean isNew = (mSinkInputs.get(key) == null);
 		final SinkInput updateNode = isNew ? node : mSinkInputs.get(key);
+
 		final boolean ownerChanged = isNew || 
 				(updateNode.getOwnerIndex() == node.getOwnerIndex());
-		if (isNew) {
+		if (!isNew) {
 			updateNode.update(node);
 		} else {
 			mSinkInputs.put(key, updateNode);
@@ -231,7 +243,7 @@ public class PulseManager {
 	}
 	
 	private void onSinkInputRemoved(final int index) {
-		mSinkInputs.remove(new Integer(index));
+		mSinkInputs.remove(index);
 		
 		synchronized(mSinkInputEventListeners) {
 			for (final SinkInputEventListener l : mSinkInputEventListeners) {
@@ -256,12 +268,23 @@ public class PulseManager {
 	}
 	
 	private void onSourceOutputUpdated(final SourceOutput node) {
-		final Integer key = new Integer(node.getIndex());
-		final boolean isNew = !mSourceOutputs.containsKey(key);
+		if (node != null && node.getAppName() != null && 
+				Arrays.binarySearch(IGNORE_APPLICATIONS, node.getAppName()) >= 0) {
+			Log.d("PulseManager", "SourceOutput is to be ignored.");
+			Log.d("PulseManager", "Name: " + node.getAppName());
+			return;			
+		} else {
+			Log.d("PulseManager", "SourceOutput is okay.");
+			Log.d("PulseManager", "Name: " + node.getAppName());
+		}
+		
+		final int key = node.getIndex();
+		final boolean isNew = (mSourceOutputs.get(key) == null);
 		final SourceOutput updateNode = isNew ? node : mSourceOutputs.get(key);
+
 		final boolean ownerChanged = isNew || 
 				(updateNode.getOwnerIndex() == node.getOwnerIndex());
-		if (isNew) {
+		if (!isNew) {
 			updateNode.update(node);
 		} else {
 			mSourceOutputs.put(key, updateNode);
@@ -344,27 +367,27 @@ public class PulseManager {
 			}
 		}
 	}
-	public Map<Integer, SinkInfo> getSinks() {
+	public SparseArray<SinkInfo> getSinks() {
 		return mSinks;
 	}
 	public SinkInfo getSink(int i) { return getSink(i, false); }
 	protected SinkInfo getSink(int i, boolean putStub) {
-		SinkInfo sink = mSinks.get(new Integer(i));
+		SinkInfo sink = mSinks.get(i);
 		if (sink != null) {
 			return sink;
 		} else if (putStub) {
 			sink = new SinkInfo(mPulse);
-			mSinks.put(new Integer(i), 	sink);
+			mSinks.put(i, sink);
 			return sink;
 		} else {
 			return null;
 		}
 	}
 	
-	public Map<Integer, SinkInput> getSinkInputs() {
+	public SparseArray<SinkInput> getSinkInputs() {
 		return mSinkInputs;
 	}
-	public Map<Integer, SourceOutput> getSourceOutputs() {
+	public SparseArray<SourceOutput> getSourceOutputs() {
 		return mSourceOutputs;
 	}
 }
