@@ -11,7 +11,7 @@ public class ReverbSharedPreferences {
 		SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, 0);
 		return prefs.getString(
 				context.getString(R.string.prefs_key_default_server),
-				"192.168.1.106");
+				"192.168.0.5");
 	}
 
 	public static void setDefaultServer(Context context, String newValue) {

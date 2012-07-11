@@ -76,7 +76,7 @@ implements PulseConnectionListener, HasPulseManager {
     				public void run() {
     					final StreamNodeView<T> nodeView = makeNewStreamNodeView();
     					getViewGroup().addView(nodeView);
-    					nodeView.setNode(node);
+    					setNode(nodeView, node);
     				}
     			});
     		} else {
@@ -84,11 +84,14 @@ implements PulseConnectionListener, HasPulseManager {
     			
     			getActivity().runOnUiThread(new Runnable() {
     				public void run() {
-    					nodeView.setNode(node);
+    					setNode(nodeView, node);
     				}
     			});
     		}	
     	}
+    }
+    protected void setNode(StreamNodeView<T> nodeView, final T node) {
+    	nodeView.setNode(node);
     }
     protected void removeNode(final int index) {
     	if(getViewGroup() != null) {

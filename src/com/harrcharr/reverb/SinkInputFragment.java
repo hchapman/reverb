@@ -6,9 +6,13 @@ import com.harrcharr.pulse.SinkInput;
 import com.harrcharr.reverb.pulseutil.PulseManager;
 import com.harrcharr.reverb.pulseutil.SinkInputEventListener;
 import com.harrcharr.reverb.widgets.OwnedStreamNodeView;
+import com.harrcharr.reverb.widgets.OwnerStreamsAdapter;
+import com.harrcharr.reverb.widgets.StreamNodeView;
 
 public class SinkInputFragment extends StreamNodeFragment<SinkInput>
 implements SinkInputEventListener {
+	OwnerStreamsAdapter mSinksAdapter;
+	
 	public SinkInputFragment() {
 		super();
 	}
@@ -22,6 +26,12 @@ implements SinkInputEventListener {
 	public void onSinkInputRemoved(PulseManager p, int index) {
 		removeNode(index);
 	}
+	
+	@Override
+	protected void setNode(StreamNodeView<SinkInput> nodeView, final SinkInput node) {
+		super.setNode(nodeView, node);
+		((OwnedStreamNodeView<SinkInput>)nodeView).setSelectorAdapter(mSinksAdapter);
+	}
 
 	@Override
 	public SparseArray<SinkInput> getNodesFromManager(PulseManager p) {
@@ -31,6 +41,7 @@ implements SinkInputEventListener {
 	@Override
 	public void onManagerAttached(PulseManager p) {
 		p.addOnSinkInputEventListener(this);
+		mSinksAdapter = new OwnerStreamsAdapter(p.getSinks());
 	}
 	
 	@Override
