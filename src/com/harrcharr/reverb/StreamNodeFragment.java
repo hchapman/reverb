@@ -21,9 +21,7 @@
  ******************************************************************************/
 package com.harrcharr.reverb;
 
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.ArrayList;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -34,7 +32,6 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.actionbarsherlock.app.SherlockFragment;
-import com.harrcharr.pulse.Stream;
 import com.harrcharr.pulse.StreamNode;
 import com.harrcharr.reverb.pulseutil.HasPulseManager;
 import com.harrcharr.reverb.pulseutil.PulseConnectionListener;
@@ -44,6 +41,7 @@ import com.harrcharr.reverb.widgets.StreamNodeView;
 public abstract class StreamNodeFragment<T extends StreamNode> extends SherlockFragment
 implements PulseConnectionListener, HasPulseManager {
 	protected ViewGroup mNodeHolder;
+	private ArrayList<StreamNodeView<T>> mNodeViews = new ArrayList<StreamNodeView<T>>();
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -75,8 +73,7 @@ implements PulseConnectionListener, HasPulseManager {
     			getActivity().runOnUiThread(new Runnable() {
     				public void run() {
     					final StreamNodeView<T> nodeView = makeNewStreamNodeView();
-    					getViewGroup().addView(nodeView);
-    					setNode(nodeView, node);
+    					setNewNode(nodeView, node);
     				}
     			});
     		} else {
@@ -89,6 +86,11 @@ implements PulseConnectionListener, HasPulseManager {
     			});
     		}	
     	}
+    }
+    protected void setNewNode(StreamNodeView<T> nodeView, final T node) {
+    	getViewGroup().addView(nodeView);
+    	mNodeViews.add(nodeView);
+    	nodeView.setNode(node);
     }
     protected void setNode(StreamNodeView<T> nodeView, final T node) {
     	nodeView.setNode(node);
@@ -104,6 +106,8 @@ implements PulseConnectionListener, HasPulseManager {
     			});
     			
     			// Destroy the StreamNode, and anything it might be holding on to
+    			mNodeViews.remove(v);
+    			v.disconnect();
     		}
     	}
     }
@@ -140,6 +144,15 @@ implements PulseConnectionListener, HasPulseManager {
 	
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+	}
+	
+	@Override
+	public void onDestroyView() {
+		super.onDestroyView();
+		for (StreamNodeView<T> v : mNodeViews) {
+			v.disconnect();
+		}
+		mNodeViews = new ArrayList<StreamNodeView<T>>();
 	}
 	
 	public abstract void onManagerAttached(PulseManager p);

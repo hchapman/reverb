@@ -2,15 +2,14 @@ package com.harrcharr.reverb.widgets;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
-import android.widget.Spinner;
 
 import com.harrcharr.pulse.OwnedStreamNode;
-import com.harrcharr.pulse.StreamNode;
 import com.harrcharr.reverb.R;
 
 public class OwnedStreamNodeView<Node extends OwnedStreamNode> extends StreamNodeView<Node> {
-	private Spinner mOwnerSelector;
+	private OwnerSpinner mOwnerSelector;
 	public OwnedStreamNodeView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
 	}
@@ -26,7 +25,7 @@ public class OwnedStreamNodeView<Node extends OwnedStreamNode> extends StreamNod
 	protected void inflateViewFromLayout(Context context) {
 		View.inflate(context, R.layout.owned_node_view, this);
 		
-		mOwnerSelector = (Spinner)this.findViewById(R.id.ownerSelector);
+		mOwnerSelector = (OwnerSpinner)this.findViewById(R.id.ownerSelector);
 	}
 	
 	@Override
@@ -36,13 +35,14 @@ public class OwnedStreamNodeView<Node extends OwnedStreamNode> extends StreamNod
 	
 	public void setSelectorAdapter(OwnerStreamsAdapter adapter) {
 		mOwnerSelector.setAdapter(adapter);
+		Log.d("OwnedStreamNodeView", "Set the selector adapter again");
 	}
 	
 	@Override
 	protected void reload() {
 		super.reload();
 		
-		final StreamNode owner = mNode.getOwner();
+		mOwnerSelector.setSelectionByIndex(mNode.getOwnerIndex());
 		//mOwnerName.setText(owner == null ? "Unknown" : owner.getDescriptiveName());
 	}
 }

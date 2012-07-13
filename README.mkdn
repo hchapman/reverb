@@ -2,7 +2,7 @@ Reverb aims to be a fully functional remote control
 for remote Pulseaudio servers (hint: think pavucontrol, 
 on your phone!) using libpulse itself.
 
-Requirements
+Build Requirements
 ========================
 * Jake Wharton's ActionBarSherlock libraries, v4.1.0
 * libpulse-android (head of master)
@@ -16,3 +16,17 @@ the necessary projects are mentioned as libraries in Eclipse's project propertie
 
 If you've built the project without Eclipse (i.e., using maven), and would like to provide build instructions,
 get in contact with me!
+
+Running
+========================
+You'll need a few things. First and foremost this involves a computer presently rocking the Pulseaudio sound server. If you're using a modern Linux distribution, this probably means you! If not, and you don't know, you don't. So, you're missing out on a lot of cool functionality! You should look into it.
+
+Now's the critical step: You need to have your Pulseaudio server set up to allow connections from remote computers. I think it's possible to do this with a program called "paman," or by at some point calling
+
+      load-module module-native-protocol-tcp
+
+with pacmd or in a Pulseaudio commands file (e.g. default.pa). There's presently no way to manage authentication with a cookie file, so you'll probably want to add IP-based authorization, or add the 
+
+      auth-anonymous=1
+
+option to the tail end of that load-module command. There's a page in the user documentation on this, called "network setup" or similar.

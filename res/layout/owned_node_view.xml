@@ -58,10 +58,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:layout_below="@+id/nodeName"
+        android:layout_alignTop="@+id/ownerSelector"
+        android:layout_alignBottom="@+id/ownerSelector"
+        android:layout_alignBaseline="@+id/ownerSelector"
         android:text="On" />
     
-    <Spinner
+    <com.harrcharr.reverb.widgets.OwnerSpinner
         android:id="@+id/ownerSelector"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

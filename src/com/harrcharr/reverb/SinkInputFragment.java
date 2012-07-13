@@ -28,8 +28,8 @@ implements SinkInputEventListener {
 	}
 	
 	@Override
-	protected void setNode(StreamNodeView<SinkInput> nodeView, final SinkInput node) {
-		super.setNode(nodeView, node);
+	protected void setNewNode(StreamNodeView<SinkInput> nodeView, final SinkInput node) {
+		super.setNewNode(nodeView, node);
 		((OwnedStreamNodeView<SinkInput>)nodeView).setSelectorAdapter(mSinksAdapter);
 	}
 

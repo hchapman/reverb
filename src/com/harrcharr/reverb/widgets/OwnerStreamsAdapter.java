@@ -31,6 +31,10 @@ public class OwnerStreamsAdapter extends BaseAdapter {
 	public long getItemId(int position) {
 		return mArray.keyAt(position);
 	}
+	
+	public int getPosition(int index) {
+		return mArray.indexOfKey(index);
+	}
 
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
@@ -63,7 +67,7 @@ public class OwnerStreamsAdapter extends BaseAdapter {
                     "ArrayAdapter requires the resource ID to be a TextView", e);
         }
 		
-		text.setText(((OwnerStreamNode)getItem(position)).getDescription());
+		text.setText(((OwnerStreamNode)getItem(position)).getDescription() + " " + position);
 		
 		return view;
 	}

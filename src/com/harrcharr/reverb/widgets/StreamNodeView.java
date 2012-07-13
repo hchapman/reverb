@@ -103,6 +103,12 @@ public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLa
 		setVolume(mNode.getVolume());
 	}
 	
+	public void disconnect() {
+		if(mPeakStream != null) {
+			mPeakStream.disconnect();
+		}
+	}
+	
 	public void setNode(final Node node) {
 		if (mNode != node) {
 			mNode = node;
@@ -114,8 +120,10 @@ public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLa
 	}
 	
 	protected void setStreamFromNode(Node node) {
-		mPeakStream = node.getNewStream("Peak detect");
-		node.connectRecordStream(mPeakStream);
+		if (mPeakStream == null) {
+			mPeakStream = node.getNewStream("Peak detect");
+			node.connectRecordStream(mPeakStream);
+		}
 		
 		mPeakStream.setReadCallback(new ReadCallback() {
 			public void run(final double vol) {
