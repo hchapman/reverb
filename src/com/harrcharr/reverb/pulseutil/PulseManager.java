@@ -355,7 +355,7 @@ public class PulseManager {
 		
 		// When sources are implemented
 		if (ownerChanged) {
-//			updateNode.setOwner(getSink(updateNode.getOwnerIndex(), true));
+			updateNode.setOwner(getSource(updateNode.getOwnerIndex(), true));
 		}
 		
 		synchronized(mSourceOutputEventListeners) {

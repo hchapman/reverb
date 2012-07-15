@@ -67,7 +67,7 @@ public class OwnerStreamsAdapter extends BaseAdapter {
                     "ArrayAdapter requires the resource ID to be a TextView", e);
         }
 		
-		text.setText(((OwnerStreamNode)getItem(position)).getDescription() + " " + position);
+		text.setText(((OwnerStreamNode)getItem(position)).getDescription());
 		
 		return view;
 	}

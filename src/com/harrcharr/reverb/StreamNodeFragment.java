@@ -30,6 +30,8 @@ import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewGroup.MarginLayoutParams;
+import android.widget.LinearLayout;
 
 import com.actionbarsherlock.app.SherlockFragment;
 import com.harrcharr.pulse.StreamNode;
@@ -41,7 +43,11 @@ import com.harrcharr.reverb.widgets.StreamNodeView;
 public abstract class StreamNodeFragment<T extends StreamNode> extends SherlockFragment
 implements PulseConnectionListener, HasPulseManager {
 	protected ViewGroup mNodeHolder;
+	private MarginLayoutParams mLayoutParams;
 	private ArrayList<StreamNodeView<T>> mNodeViews = new ArrayList<StreamNodeView<T>>();
+	
+	public StreamNodeFragment() {
+	}
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -73,6 +79,7 @@ implements PulseConnectionListener, HasPulseManager {
     			getActivity().runOnUiThread(new Runnable() {
     				public void run() {
     					final StreamNodeView<T> nodeView = makeNewStreamNodeView();
+
     					setNewNode(nodeView, node);
     				}
     			});
@@ -88,7 +95,12 @@ implements PulseConnectionListener, HasPulseManager {
     	}
     }
     protected void setNewNode(StreamNodeView<T> nodeView, final T node) {
-    	getViewGroup().addView(nodeView);
+    	if (mLayoutParams == null) {
+    		mLayoutParams = new LinearLayout.LayoutParams(getViewGroup().getLayoutParams());
+    		mLayoutParams.setMargins(0, 0, 0, 10);
+    	}
+    	
+    	getViewGroup().addView(nodeView, mLayoutParams);
     	mNodeViews.add(nodeView);
     	nodeView.setNode(node);
     }

@@ -79,6 +79,9 @@ public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLa
 	protected abstract void inflateViewFromLayout(final Context context);
 	
 	protected void prepareViews() {
+		setBackgroundResource(R.drawable.stream_view_background);
+		setPadding(10, 10, 10, 10);
+		
 		mName = (TextView) this.findViewById(R.id.nodeName);
 		
 		mVolumeGroup = (ViewGroup) this.findViewById(R.id.volumeHolder);
@@ -97,7 +100,7 @@ public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLa
 	}
 	
 	protected void reload() {
-    	mName.setText(mNode.getDescriptiveName() + " " + mNode.getIndex());
+		mName.setText(mNode.getDescriptiveName());
         
 		setMute(mNode.isMuted());
 		setVolume(mNode.getVolume());
@@ -134,7 +137,7 @@ public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLa
 				});
 			}
 		}); 
-		
+	
 		Log.d("StreamNodeView", "Set new peak stream");
 	}
 	
@@ -145,6 +148,10 @@ public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLa
 	
 	public synchronized void setVolume(Volume volume) {	
 		mVolume = volume; 
+		
+		if (volume == null) {
+			return;
+		}
 		
 		// If we presently have no volume sliders in the widget
 		if (mSliders == null) {			

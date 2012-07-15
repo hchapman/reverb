@@ -4,12 +4,15 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 
 import com.harrcharr.pulse.OwnedStreamNode;
 import com.harrcharr.reverb.R;
 
 public class OwnedStreamNodeView<Node extends OwnedStreamNode> extends StreamNodeView<Node> {
 	private OwnerSpinner mOwnerSelector;
+	private TextView mAppName;
+	
 	public OwnedStreamNodeView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
 	}
@@ -31,6 +34,8 @@ public class OwnedStreamNodeView<Node extends OwnedStreamNode> extends StreamNod
 	@Override
 	protected void prepareViews() {
 		super.prepareViews();
+		
+		mAppName = (TextView) this.findViewById(R.id.nodeApplication);
 	}
 	
 	public void setSelectorAdapter(OwnerStreamsAdapter adapter) {
@@ -42,6 +47,7 @@ public class OwnedStreamNodeView<Node extends OwnedStreamNode> extends StreamNod
 	protected void reload() {
 		super.reload();
 		
+		mAppName.setText(mNode.getAppName());
 		mOwnerSelector.setSelectionByIndex(mNode.getOwnerIndex());
 		//mOwnerName.setText(owner == null ? "Unknown" : owner.getDescriptiveName());
 	}
