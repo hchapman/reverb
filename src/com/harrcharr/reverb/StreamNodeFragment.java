@@ -25,6 +25,7 @@ import java.util.ArrayList;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
@@ -75,8 +76,14 @@ implements PulseConnectionListener, HasPulseManager {
     protected void updateNode(final T node) {
     	if(getViewGroup() != null) {
     		StreamNodeView<T> v = getStreamNodeViewByIndex(node.getIndex());
+    		
+    		FragmentActivity activity = getActivity();
+    		
+    		if(activity == null)
+				return;
+    		
     		if (v == null) {    			
-    			getActivity().runOnUiThread(new Runnable() {
+    			activity.runOnUiThread(new Runnable() {
     				public void run() {
     					final StreamNodeView<T> nodeView = makeNewStreamNodeView();
 
@@ -86,7 +93,7 @@ implements PulseConnectionListener, HasPulseManager {
     		} else {
     			final StreamNodeView<T> nodeView = v;
     			
-    			getActivity().runOnUiThread(new Runnable() {
+    			activity.runOnUiThread(new Runnable() {
     				public void run() {
     					setNode(nodeView, node);
     				}

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <merge xmlns:android="http://schemas.android.com/apk/res/android">
-
+    
     <TextView
         android:id="@+id/nodeApplication"
         android:layout_width="wrap_content"
@@ -16,7 +16,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:text="Stream name"
+        android:text="Audio stream"
         android:textSize="12sp" />
 
     <LinearLayout
@@ -55,13 +55,6 @@
         android:layout_toLeftOf="@+id/lockChannels"
         android:button="@drawable/mute_button_selector" 
         android:gravity="center"/>
-
-    <ImageView
-        android:id="@+id/imageView1"
-        android:layout_width="match_parent"
-        android:layout_height="10dp"
-        android:layout_below="@+id/nodeMute"
-        android:src="@android:drawable/divider_horizontal_dark" />
     
     <TextView
         android:id="@+id/ownerNameOn"
@@ -81,4 +74,6 @@
         android:layout_below="@+id/nodeName" 
         android:prompt="@string/app_name"
         />
+
+
 </merge>

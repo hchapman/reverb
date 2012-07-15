@@ -35,6 +35,7 @@ import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.harrcharr.pulse.ChannelMap;
 import com.harrcharr.pulse.Stream;
 import com.harrcharr.pulse.Stream.ReadCallback;
 import com.harrcharr.pulse.StreamNode;
@@ -103,7 +104,7 @@ public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLa
 		mName.setText(mNode.getDescriptiveName());
         
 		setMute(mNode.isMuted());
-		setVolume(mNode.getVolume());
+		setVolume(mNode.getVolume(), mNode.getChannelMap());
 	}
 	
 	public void disconnect() {
@@ -146,7 +147,7 @@ public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLa
 	    super.onLayout(changed, l, t, r, b);
 	}
 	
-	public synchronized void setVolume(Volume volume) {	
+	public synchronized void setVolume(Volume volume, ChannelMap channels) {	
 		mVolume = volume; 
 		
 		if (volume == null) {
@@ -159,6 +160,7 @@ public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLa
 			int i = 0;
 			for (int chVol : volume.getVolumes()) {
 				VolumeSlider v = new VolumeSlider(getContext(), chVol, i); 
+				v.setChannelName(channels.getChannelNameByIndex(i));
 				
 				mSliders.add(v);
 				mVolumeGroup.addView(v);
@@ -169,7 +171,8 @@ public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLa
 		} else if (volume.getNumChannels() > mSliders.size()) {
 			int oldMax = mSliders.size();
 			for (int i = oldMax; i < volume.getNumChannels(); i++) {
-				VolumeSlider v = new VolumeSlider(getContext(), volume.getVolumes()[i], i); 
+				VolumeSlider v = new VolumeSlider(getContext(), volume.getVolumes()[i], i);
+				v.setChannelName(channels.getChannelNameByIndex(i));
 				
 				mSliders.add(v);
 				mVolumeGroup.addView(v);
@@ -185,16 +188,22 @@ public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLa
 				mVolumeGroup.removeView(mSliders.remove(i));
 			}
 			for (int i = 0; i < mSliders.size(); i++) {
-				if (shouldUpdateChannel(i))
-					mSliders.get(i).setVolume(volume.getVolumes()[i]);
+				if (shouldUpdateChannel(i)) {
+					final VolumeSlider v = mSliders.get(i);
+					v.setVolume(volume.getVolumes()[i]);
+					v.setChannelName(channels.getChannelNameByIndex(i));
+				}
 			}
 			
 		// We have the same number of sliders in the volume as in the widget.
 		// This is the most common case.
 		} else {
 			for (int i = 0; i < mSliders.size(); i++) {
-				if (shouldUpdateChannel(i))
-					mSliders.get(i).setVolume(volume.getVolumes()[i]);
+				if (shouldUpdateChannel(i)) {
+					final VolumeSlider v = mSliders.get(i);
+					v.setVolume(volume.getVolumes()[i]);
+					v.setChannelName(channels.getChannelNameByIndex(i));
+				}
 			}
 		}
 	}
@@ -256,10 +265,15 @@ public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLa
 			
 			mLinear = (TextView)this.findViewById(R.id.linearValue);
 			mDb = (TextView)this.findViewById(R.id.dbValue);
+			mChannelName = (TextView)this.findViewById(R.id.channelName);
 			
 			mTracking = false;
 			
 			setVolume(volume);
+		}
+		
+		public void setChannelName(CharSequence name) {
+			mChannelName.setText(name);
 		}
 		
 		public void setVolume(int volume) {
