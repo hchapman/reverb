@@ -1,0 +1,7 @@
+* Move streams to new owners [in progress]
+* Fix Sources & not loading properly
+* Fix Sources' peak streams
+* Add quick option to disable/enable peak streams (save network usage)
+* Enable setting of default owner nodes
+* Fix race conditions with setting (e.g. mute, moves)
+

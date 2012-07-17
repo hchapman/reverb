@@ -4,13 +4,26 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.TextView;
 
 import com.harrcharr.pulse.OwnedStreamNode;
+import com.harrcharr.pulse.OwnerStreamNode;
+import com.harrcharr.pulse.SuccessCallback;
 import com.harrcharr.reverb.R;
 
-public class OwnedStreamNodeView<Node extends OwnedStreamNode> extends StreamNodeView<Node> {
+public class OwnedStreamNodeView<Node extends OwnedStreamNode> extends StreamNodeView<Node>
+	implements OwnerSpinner.OnItemSelectedListener {
 	private OwnerSpinner mOwnerSelector;
+	private boolean mOwnerLoading;
+	private int mOwnerIndex = 0;
+	
+	private boolean mViewAcceptsInput = false;
+	
+	public void setViewAcceptsInput(boolean viewAcceptsInput) {
+		this.mViewAcceptsInput = viewAcceptsInput;
+	}
+
 	private TextView mAppName;
 	
 	public OwnedStreamNodeView(Context context, AttributeSet attrs, int defStyle) {
@@ -29,6 +42,12 @@ public class OwnedStreamNodeView<Node extends OwnedStreamNode> extends StreamNod
 		View.inflate(context, R.layout.owned_node_view, this);
 		
 		mOwnerSelector = (OwnerSpinner)this.findViewById(R.id.ownerSelector);
+
+		synchronized(mOwnerSelector) {
+			mOwnerLoading = true;
+			mOwnerSelector.setOnItemSelectedListener(this);
+			mOwnerLoading = false;
+		}
 	}
 	
 	@Override
@@ -39,7 +58,11 @@ public class OwnedStreamNodeView<Node extends OwnedStreamNode> extends StreamNod
 	}
 	
 	public void setSelectorAdapter(OwnerStreamsAdapter adapter) {
-		mOwnerSelector.setAdapter(adapter);
+		synchronized(mOwnerSelector) {
+			mOwnerLoading = true;
+			mOwnerSelector.setAdapter(adapter);
+			mOwnerLoading = false;
+		}
 		Log.d("OwnedStreamNodeView", "Set the selector adapter again");
 	}
 	
@@ -48,7 +71,43 @@ public class OwnedStreamNodeView<Node extends OwnedStreamNode> extends StreamNod
 		super.reload();
 		
 		mAppName.setText(mNode.getAppName());
-		mOwnerSelector.setSelectionByIndex(mNode.getOwnerIndex());
-		//mOwnerName.setText(owner == null ? "Unknown" : owner.getDescriptiveName());
+		mOwnerIndex = mNode.getOwnerIndex();
+		Log.i("OwnedStreamNodeView", "Owner index set to "+mOwnerIndex);
+		
+		synchronized(mOwnerSelector) {
+			mOwnerLoading = true;
+			mOwnerSelector.setSelectionByIndex(mOwnerIndex);
+			mOwnerLoading = false;
+		}
+	}
+
+	@Override
+	public void onItemSelected(AdapterView<?> spinner, View view, int position, 
+			long id) {
+		if (!mViewAcceptsInput) {
+			mViewAcceptsInput = true;
+			return;
+		}
+		
+		synchronized(mOwnerSelector) {
+			if (mOwnerLoading) {
+				return;
+			}
+		}
+		
+		OwnerStreamNode owner = ((OwnerStreamNode)spinner.getItemAtPosition(position));
+		if (mOwnerIndex != owner.getIndex()) {
+			Log.i("OwnedStreamNodeView", "Item selected. Changing owner to "+owner.getIndex());
+			Log.i("OwnedStreamNodeView", "Old index was "+mOwnerIndex);
+			mNode.moveNode(owner, null);
+			
+			mOwnerIndex = owner.getIndex();
+		}
+	}
+
+	@Override
+	public void onNothingSelected(AdapterView<?> arg0) {
+		// TODO Auto-generated method stub
+		
 	}
 }
