@@ -32,3 +32,5 @@ with pacmd or in a Pulseaudio commands file (e.g. default.pa). There's presently
       auth-anonymous=1
 
 option to the tail end of that load-module command. There's a page in the user documentation on this, called "network setup" or similar.
+
+For a more robust set of instructions, visit [the PulseAudio Network Documentation](http://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/Network), specifically the section "Direct Connection."
