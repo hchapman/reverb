@@ -3,5 +3,6 @@
         <PreferenceCategory
         	android:title="Connection Settings">
         <EditTextPreference android:key="@string/prefs_key_default_server" android:title="@string/prefs_title_default_server" android:summary="@string/prefs_summary_default_server"/>
+        <CheckBoxPreference android:key="@string/prefs_key_display_vol_peaks" android:title="@string/prefs_title_display_vol_peaks" android:summary="@string/prefs_summary_display_vol_peaks"/>
     </PreferenceCategory>
 </PreferenceScreen>

@@ -22,4 +22,32 @@ public class ReverbSharedPreferences {
 				newValue);
 		prefsEditor.commit();
 	}
+	
+	public static boolean displayPeaks(Context context) {
+		SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, 0);
+		return prefs.getBoolean(
+				context.getString(R.string.prefs_key_display_vol_peaks), 
+				false);
+	}
+	
+	public static void setDisplayPeaks(Context context, boolean newValue) {
+		SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, 0);
+		Editor prefsEditor = prefs.edit();
+		prefsEditor.putBoolean(
+				context.getString(R.string.prefs_key_display_vol_peaks),
+				newValue);
+		prefsEditor.commit();
+	}
+	
+	public static void registerOnSharedPreferenceChangeListener(Context context,
+			SharedPreferences.OnSharedPreferenceChangeListener listener) {
+		SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, 0);
+		prefs.registerOnSharedPreferenceChangeListener(listener);
+	}
+	
+	public static void unregisterOnSharedPreferenceChangeListener(Context context,
+			SharedPreferences.OnSharedPreferenceChangeListener listener) {
+		SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, 0);
+		prefs.unregisterOnSharedPreferenceChangeListener(listener);
+	}
 }

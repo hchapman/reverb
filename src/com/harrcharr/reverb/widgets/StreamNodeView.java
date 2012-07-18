@@ -41,6 +41,7 @@ import com.harrcharr.pulse.Stream.ReadCallback;
 import com.harrcharr.pulse.StreamNode;
 import com.harrcharr.pulse.Volume;
 import com.harrcharr.reverb.R;
+import com.harrcharr.reverb.ReverbSharedPreferences;
 import com.harrcharr.reverb.widgets.SynchronizedSeekBar.OnTouchEventListener;
 
 public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLayout {
@@ -58,6 +59,7 @@ public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLa
 	private Stream mPeakStream;
 	
 	private boolean mTracking;
+	private boolean mDisplayPeaks;
 	
 	public StreamNodeView(Context context) {
 		super(context);
@@ -97,6 +99,12 @@ public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLa
 				mNode.setMute(((CompoundButton)v).isChecked(), null);
 			}
 		});
+    	
+    	mDisplayPeaks = ReverbSharedPreferences.displayPeaks(getContext());
+    	
+    	if(!mDisplayPeaks) {
+    		mPeak.setVisibility(GONE);
+    	}
 
 	}
 	
@@ -107,7 +115,7 @@ public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLa
 		setVolume(mNode.getVolume(), mNode.getChannelMap());
 	}
 	
-	public void disconnect() {
+	public void disconnect() {		
 		if(mPeakStream != null) {
 			mPeakStream.disconnect();
 		}
@@ -124,6 +132,13 @@ public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLa
 	}
 	
 	protected void setStreamFromNode(Node node) {
+    	if(!mDisplayPeaks) {
+    		if (mPeakStream != null) {
+    			mPeakStream.disconnect();
+    		}
+    		return;
+    	}
+		
 		if (mPeakStream == null) {
 			mPeakStream = node.getNewStream("Peak detect");
 			node.connectRecordStream(mPeakStream);
@@ -140,6 +155,10 @@ public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLa
 		}); 
 	
 		Log.d("StreamNodeView", "Set new peak stream");
+		
+    	if(!mDisplayPeaks) {
+    		mPeakStream.disconnect();
+    	}
 	}
 	
 	@Override
@@ -334,6 +353,22 @@ public abstract class StreamNodeView<Node extends StreamNode> extends RelativeLa
 			}
 			
 			return false;
+		}
+	}
+
+	public void setDisplayPeaks(boolean displayPeaks) {
+		if(displayPeaks == mDisplayPeaks) {
+			return;
+		} else if (!displayPeaks) {
+			mDisplayPeaks = displayPeaks;
+			mPeak.setVisibility(GONE);
+			if (mPeakStream != null) {
+				mPeakStream.disconnect();
+			}
+		} else {
+			mDisplayPeaks = displayPeaks;
+			mPeak.setVisibility(VISIBLE);
+			setStreamFromNode(mNode);
 		}
 	}
 }

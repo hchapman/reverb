@@ -24,6 +24,7 @@ package com.harrcharr.reverb;
 import java.util.ArrayList;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
@@ -42,7 +43,7 @@ import com.harrcharr.reverb.pulseutil.PulseManager;
 import com.harrcharr.reverb.widgets.StreamNodeView;
 
 public abstract class StreamNodeFragment<T extends StreamNode> extends SherlockFragment
-implements PulseConnectionListener, HasPulseManager {
+implements PulseConnectionListener, HasPulseManager, SharedPreferences.OnSharedPreferenceChangeListener {
 	protected ViewGroup mNodeHolder;
 	private MarginLayoutParams mLayoutParams;
 	private ArrayList<StreamNodeView<T>> mNodeViews = new ArrayList<StreamNodeView<T>>();
@@ -69,6 +70,8 @@ implements PulseConnectionListener, HasPulseManager {
 		    	}
         	}
         }
+        
+        ReverbSharedPreferences.registerOnSharedPreferenceChangeListener(getActivity(), this);
         
         return v;
     }
@@ -172,6 +175,7 @@ implements PulseConnectionListener, HasPulseManager {
 			v.disconnect();
 		}
 		mNodeViews = new ArrayList<StreamNodeView<T>>();
+		ReverbSharedPreferences.unregisterOnSharedPreferenceChangeListener(getActivity(), this);
 	}
 	
 	public abstract void onManagerAttached(PulseManager p);
@@ -212,5 +216,15 @@ implements PulseConnectionListener, HasPulseManager {
 	
 	public PulseManager getPulseManager() {
 		return ((HasPulseManager)getActivity()).getPulseManager();
+	}
+
+	public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+		if(key.equals(getActivity().getString(R.string.prefs_key_display_vol_peaks))) {
+			synchronized(mNodeViews) {
+				for (StreamNodeView nodeView : mNodeViews) {
+					nodeView.setDisplayPeaks(ReverbSharedPreferences.displayPeaks(getActivity()));
+				}
+			}
+		}
 	}
 }
