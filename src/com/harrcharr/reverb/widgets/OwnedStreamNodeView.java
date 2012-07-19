@@ -73,12 +73,8 @@ public class OwnedStreamNodeView<Node extends OwnedStreamNode> extends StreamNod
 		mAppName.setText(mNode.getAppName());
 		mOwnerIndex = mNode.getOwnerIndex();
 		Log.i("OwnedStreamNodeView", "Owner index set to "+mOwnerIndex);
-		
-		synchronized(mOwnerSelector) {
-			mOwnerLoading = true;
-			mOwnerSelector.setSelectionByIndex(mOwnerIndex);
-			mOwnerLoading = false;
-		}
+
+		mOwnerSelector.setSelectionByIndex(mOwnerIndex);
 	}
 
 	@Override
@@ -87,12 +83,6 @@ public class OwnedStreamNodeView<Node extends OwnedStreamNode> extends StreamNod
 		if (!mViewAcceptsInput) {
 			mViewAcceptsInput = true;
 			return;
-		}
-		
-		synchronized(mOwnerSelector) {
-			if (mOwnerLoading) {
-				return;
-			}
 		}
 		
 		OwnerStreamNode owner = ((OwnerStreamNode)spinner.getItemAtPosition(position));
