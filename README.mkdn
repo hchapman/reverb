@@ -19,6 +19,11 @@ the necessary projects are mentioned as libraries in Eclipse's project propertie
 If you've built the project without Eclipse (i.e., using maven), and would like to provide build instructions,
 get in contact with me!
 
+Downloads
+========================
+Apparently there's an APK file at https://github.com/hchapman/reverb/Reverb.apk/qr_code (thanks [SerialkillaG420](https://github.com/SerialkillaG420)) which you should be able to download and install.
+No promises that it is either the newest version (I haven't had enough time to polish Reverb up in quite a while).
+
 Running
 ========================
 You'll need a few things. First and foremost this involves a computer presently rocking the Pulseaudio sound server. If you're using a modern Linux distribution, this probably means you! If not, and you don't know, you don't. So, you're missing out on a lot of cool functionality! You should look into it.
