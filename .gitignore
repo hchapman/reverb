@@ -4,3 +4,8 @@ obj
 libs
 .classpath
 lint.xml
+gradlew
+.gradle
+.idea
+gradlew.bat
+local.properties
