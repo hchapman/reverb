@@ -3,14 +3,19 @@ buildscript {
         maven { url 'http://repo1.maven.org/maven2' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.7.+'
+        classpath 'com.android.tools.build:gradle:0.8.+'
     }
 }
 apply plugin: 'android'
 
+repositories{
+    mavenCentral()
+}
 
 dependencies {
     compile files('libs/android-support-v4.jar')
+    compile 'com.actionbarsherlock:actionbarsherlock:4.4.0@aar'
+    compile project(':libpulse-android')
 }
 
 android {
