@@ -1,0 +1,3 @@
+[submodule "libpulse-android"]
+	path = libpulse-android
+	url = git@github.com:hchapman/libpulse-android.git
